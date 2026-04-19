@@ -91,7 +91,7 @@ def cmd_execute(side: str, ticker: str, qty: float):
             "symbol": ticker,
             "side": side,
             "qty": qty,
-            "price": result.get("filled_price", 0),
+            "price": result.get("filled_price") or 0,
             "order_id": result["order_id"],
             "trade_type": "market",
             "status": result["status"],
