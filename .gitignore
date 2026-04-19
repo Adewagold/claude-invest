@@ -8,3 +8,4 @@ dist/
 *.egg-info/
 .pytest_cache/
 .remember/
+.claude/settings.local.json
