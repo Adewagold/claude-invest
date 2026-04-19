@@ -46,7 +46,9 @@ export function PortfolioChart({ snapshots }: PortfolioChartProps) {
       .slice()
       .reverse()
       .map((s) => ({
-        time: s.timestamp.replace(" ", "T") as Time,
+        time: Math.floor(
+          new Date(s.timestamp.replace(" ", "T") + "Z").getTime() / 1000
+        ) as Time,
         value: s.total_value,
       }));
 
