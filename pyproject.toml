@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claude-invest"
+version = "0.1.0"
+description = "AI-powered algorithmic trading system"
+requires-python = ">=3.12"
+dependencies = [
+    "alpaca-py>=0.31.0",
+    "pandas>=2.2.0",
+    "ta>=0.11.0",
+    "textblob>=0.18.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "pyyaml>=6.0",
+    "aiosqlite>=0.20.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+claude-invest = "claude_invest.main:main"
