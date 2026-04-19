@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from claude_invest.config.loader import load_config
 from claude_invest.modules.db import Database
+from claude_invest.modules.portfolio import get_portfolio
 
 DEFAULT_DB_PATH = "claude_invest.db"
 
@@ -56,6 +57,10 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
         result = db.get_signals(ticker=ticker, limit=limit)
         db.close()
         return result
+
+    @app.get("/api/positions")
+    def get_positions():
+        return get_portfolio()
 
     @app.get("/api/config")
     def get_config():

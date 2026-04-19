@@ -5,6 +5,7 @@ import type {
   Signal,
   DiscoveryEntry,
   PortfolioSnapshot,
+  Portfolio,
   Stats,
   Config,
 } from "./types";
@@ -44,6 +45,12 @@ export function useDiscovery(limit = 50) {
 export function usePortfolioSnapshots(limit = 100) {
   return useSWR<PortfolioSnapshot[]>(`/api/portfolio?limit=${limit}`, fetcher, {
     refreshInterval: 30000,
+  });
+}
+
+export function usePositions() {
+  return useSWR<Portfolio>("/api/positions", fetcher, {
+    refreshInterval: 15000,
   });
 }
 
