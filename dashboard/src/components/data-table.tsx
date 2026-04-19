@@ -11,7 +11,8 @@ interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function DataTable<T = any>({
   columns,
   data,
   emptyMessage = "No data",
@@ -56,7 +57,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 >
                   {col.render
                     ? col.render(row)
-                    : String(row[col.key] ?? "")}
+                    : String((row as Record<string, unknown>)[col.key] ?? "")}
                 </td>
               ))}
             </tr>

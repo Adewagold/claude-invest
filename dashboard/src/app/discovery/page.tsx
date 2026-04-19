@@ -90,7 +90,7 @@ export default function DiscoveryPage() {
       ) : (
         <DataTable
           columns={columns}
-          data={(discovery ?? []) as unknown as Record<string, unknown>[]}
+          data={discovery ?? []}
           emptyMessage="No discovery data yet — scanner hasn't run"
         />
       )}

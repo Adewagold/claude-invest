@@ -60,7 +60,7 @@ export default function TradesPage() {
       ) : (
         <DataTable
           columns={columns}
-          data={(decisions ?? []) as unknown as Record<string, unknown>[]}
+          data={decisions ?? []}
           emptyMessage="No trade decisions yet"
         />
       )}
