@@ -69,9 +69,26 @@ def analyze_sentiment(ticker: str, lookback_hours: int = 24) -> dict:
         limit=20,
         sort="desc",
     )
-    articles = client.get_news(request)
+    result = client.get_news(request)
 
-    if not articles:
+    # Extract news list from response.
+    # Live API returns a NewsSet that iterates as ('data', {'news': [...]}) tuples.
+    # Mocks may return a plain list.
+    if isinstance(result, list):
+        news_items = result
+    elif hasattr(result, "news"):
+        news_items = result.news
+    else:
+        news_items = []
+        try:
+            for key, value in result:
+                if key == "data" and isinstance(value, dict) and "news" in value:
+                    news_items = value["news"]
+                    break
+        except (ValueError, TypeError):
+            pass
+
+    if not news_items:
         return {
             "ticker": ticker,
             "score": 0.0,
@@ -81,21 +98,25 @@ def analyze_sentiment(ticker: str, lookback_hours: int = 24) -> dict:
 
     scores = []
     headlines = []
-    for article in articles:
-        text = (
-            f"{article.headline}. {article.summary}"
-            if article.summary
-            else article.headline
-        )
+    for article in news_items:
+        # Articles may be dicts or objects depending on alpaca-py version
+        if isinstance(article, dict):
+            headline = article.get("headline", "")
+            summary = article.get("summary", "")
+        else:
+            headline = getattr(article, "headline", "")
+            summary = getattr(article, "summary", "")
+
+        text = f"{headline}. {summary}" if summary else headline
         s = score_headline(text)
         scores.append(s)
-        headlines.append({"headline": article.headline, "score": s})
+        headlines.append({"headline": headline, "score": s})
 
     avg_score = round(sum(scores) / len(scores), 4)
 
     return {
         "ticker": ticker,
         "score": max(-1.0, min(1.0, avg_score)),
-        "article_count": len(articles),
+        "article_count": len(news_items),
         "headlines": headlines,
     }

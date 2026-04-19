@@ -34,8 +34,16 @@ def _get_snapshot(ticker: str) -> dict:
         return {"volume_ratio": 0.0}
 
     snap = snapshot[ticker]
-    daily_vol = float(snap.daily_bar.volume) if snap.daily_bar else 0
-    prev_vol = float(snap.previous_daily_bar.volume) if snap.previous_daily_bar else 1
+
+    # Handle both dict and object responses from alpaca-py
+    if isinstance(snap, dict):
+        daily_bar = snap.get("daily_bar", {})
+        prev_bar = snap.get("previous_daily_bar", {})
+        daily_vol = float(daily_bar.get("volume", 0)) if daily_bar else 0
+        prev_vol = float(prev_bar.get("volume", 1)) if prev_bar else 1
+    else:
+        daily_vol = float(snap.daily_bar.volume) if snap.daily_bar else 0
+        prev_vol = float(snap.previous_daily_bar.volume) if snap.previous_daily_bar else 1
 
     volume_ratio = daily_vol / prev_vol if prev_vol > 0 else 0.0
 
