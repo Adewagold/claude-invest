@@ -5,9 +5,23 @@ import { StatCard } from "@/components/stat-card";
 import { PortfolioChart } from "@/components/portfolio-chart";
 
 export default function OverviewPage() {
-  const { data: snapshots } = usePortfolioSnapshots();
-  const { data: stats } = useStats();
-  const { data: decisions } = useDecisions(10);
+  const { data: snapshots, error: snapErr } = usePortfolioSnapshots();
+  const { data: stats, error: statsErr } = useStats();
+  const { data: decisions, error: decErr } = useDecisions(10);
+
+  if (snapErr || statsErr || decErr) {
+    return (
+      <div className="p-6 bg-red-900/20 border border-red-800 rounded-lg text-red-400">
+        <p className="font-medium">API connection error</p>
+        <p className="text-sm mt-1 text-red-500">
+          Make sure the FastAPI server is running on port 8000:
+          <code className="block mt-2 bg-zinc-900 px-3 py-1 rounded text-xs text-zinc-300">
+            .venv/bin/python -m claude_invest.modules.api_server
+          </code>
+        </p>
+      </div>
+    );
+  }
 
   const latestSnapshot = snapshots?.[0];
 

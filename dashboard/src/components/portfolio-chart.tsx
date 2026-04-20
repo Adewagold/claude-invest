@@ -42,16 +42,24 @@ export function PortfolioChart({ snapshots }: PortfolioChartProps) {
       lineWidth: 2,
     });
 
+    // Build data: reverse (oldest first), deduplicate timestamps, ensure ascending order
+    const seen = new Set<number>();
     const data = snapshots
       .slice()
       .reverse()
-      .map((s) => ({
-        time: Math.floor(
+      .reduce<{ time: Time; value: number }[]>((acc, s) => {
+        const ts = Math.floor(
           new Date(s.timestamp.replace(" ", "T") + "Z").getTime() / 1000
-        ) as Time,
-        value: s.total_value,
-      }));
+        );
+        if (!isNaN(ts) && !seen.has(ts)) {
+          seen.add(ts);
+          acc.push({ time: ts as Time, value: s.total_value });
+        }
+        return acc;
+      }, [])
+      .sort((a, b) => (a.time as number) - (b.time as number));
 
+    if (data.length === 0) return;
     series.setData(data);
     chart.timeScale().fitContent();
     chartRef.current = chart;
