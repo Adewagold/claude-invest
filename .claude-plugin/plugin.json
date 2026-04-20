@@ -1,0 +1,8 @@
+{
+  "name": "claude-invest-trading",
+  "version": "0.1.0",
+  "description": "Trading engine controls for Claude Invest — start/stop crons, check status",
+  "author": {
+    "name": "Adewale Adeleye"
+  }
+}

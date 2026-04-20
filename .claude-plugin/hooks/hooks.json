@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/adewaleadeleye/projects/claude-invest && lsof -ti:8000 > /dev/null 2>&1 || (source .venv/bin/activate && .venv/bin/python -m claude_invest.modules.api_server &>/dev/null &) ; echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Claude Invest FastAPI server started on port 8000. Trading crons are not active yet. Run /start-trading to activate the trading engine.\"}}'",
+            "timeout": 10,
+            "statusMessage": "Starting Claude Invest API server..."
+          }
+        ]
+      }
+    ]
+  }
+}
