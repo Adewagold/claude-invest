@@ -9,8 +9,12 @@ from claude_invest.modules.sentiment import analyze_sentiment
 from claude_invest.modules.technicals import analyze_technicals
 from claude_invest.modules.risk_manager import RiskManager
 from claude_invest.modules.executor import execute_order
+from claude_invest.modules.learner import analyze_day, score_patterns
+from claude_invest.modules.portfolio_tracker import get_allocation
+from claude_invest.modules.strategy import update_lessons, build_strategy_brief, load_lessons
 
 DB_PATH = "claude_invest.db"
+LESSONS_DIR = "lessons"
 
 
 def _output(data: dict):
@@ -109,11 +113,44 @@ def cmd_log_decision(payload_json: str):
     _output({"status": "logged", "decision": payload})
 
 
+def cmd_review_day(date: str | None = None):
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    report = analyze_day(db, date)
+    from claude_invest.modules.portfolio import get_portfolio
+    try:
+        portfolio = get_portfolio()
+        allocation = get_allocation(config, portfolio["positions"])
+    except Exception:
+        allocation = {"tiers": {}, "total_value": 0}
+    update_lessons(LESSONS_DIR, report["patterns"], report["date"])
+    brief = build_strategy_brief(LESSONS_DIR, allocation)
+    report["allocation"] = allocation
+    report["strategy_brief"] = brief
+    db.close()
+    _output(report)
+
+
+def cmd_allocation():
+    config = load_config()
+    from claude_invest.modules.portfolio import get_portfolio
+    portfolio = get_portfolio()
+    allocation = get_allocation(config, portfolio["positions"])
+    _output(allocation)
+
+
+def cmd_lessons():
+    lessons = load_lessons(LESSONS_DIR)
+    _output(lessons)
+
+
 def main():
     if len(sys.argv) < 2:
         _output({"error": "Usage: claude-invest <command> [args]", "commands": [
             "portfolio", "scan", "analyze <ticker>", "risk-check <ticker> <qty> <price>",
             "execute <buy|sell> <ticker> <qty>", "log-decision <json>",
+            "review-day [date]", "allocation", "lessons",
         ]})
         sys.exit(1)
 
@@ -131,6 +168,12 @@ def main():
         cmd_execute(sys.argv[2], sys.argv[3], float(sys.argv[4]))
     elif command == "log-decision" and len(sys.argv) >= 3:
         cmd_log_decision(sys.argv[2])
+    elif command == "review-day":
+        cmd_review_day(sys.argv[2] if len(sys.argv) >= 3 else None)
+    elif command == "allocation":
+        cmd_allocation()
+    elif command == "lessons":
+        cmd_lessons()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
