@@ -12,6 +12,7 @@ from claude_invest.modules.executor import execute_order
 from claude_invest.modules.learner import analyze_day, score_patterns
 from claude_invest.modules.portfolio_tracker import get_allocation
 from claude_invest.modules.strategy import update_lessons, build_strategy_brief, load_lessons
+from claude_invest.modules.watchlist import load_watchlist, add_to_watchlist, remove_from_watchlist, check_watchlist
 
 DB_PATH = "claude_invest.db"
 LESSONS_DIR = "lessons"
@@ -145,12 +146,31 @@ def cmd_lessons():
     _output(lessons)
 
 
+def cmd_watchlist():
+    tickers = load_watchlist()
+    portfolio = get_portfolio()
+    portfolio_symbols = [p["symbol"] for p in portfolio["positions"]]
+    checked = check_watchlist(tickers, portfolio_symbols)
+    _output({"watchlist": checked, "count": len(checked)})
+
+
+def cmd_watchlist_add(symbol: str, note: str = ""):
+    result = add_to_watchlist(symbol, note)
+    _output(result)
+
+
+def cmd_watchlist_remove(symbol: str):
+    result = remove_from_watchlist(symbol)
+    _output(result)
+
+
 def main():
     if len(sys.argv) < 2:
         _output({"error": "Usage: claude-invest <command> [args]", "commands": [
             "portfolio", "scan", "analyze <ticker>", "risk-check <ticker> <qty> <price>",
             "execute <buy|sell> <ticker> <qty>", "log-decision <json>",
             "review-day [date]", "allocation", "lessons",
+            "watchlist", "watchlist-add <symbol> [note]", "watchlist-remove <symbol>",
         ]})
         sys.exit(1)
 
@@ -174,6 +194,13 @@ def main():
         cmd_allocation()
     elif command == "lessons":
         cmd_lessons()
+    elif command == "watchlist":
+        cmd_watchlist()
+    elif command == "watchlist-add" and len(sys.argv) >= 3:
+        note = sys.argv[3] if len(sys.argv) >= 4 else ""
+        cmd_watchlist_add(sys.argv[2], note)
+    elif command == "watchlist-remove" and len(sys.argv) >= 3:
+        cmd_watchlist_remove(sys.argv[2])
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
