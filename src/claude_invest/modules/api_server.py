@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from claude_invest.config.loader import load_config
 from claude_invest.modules.db import Database
 from claude_invest.modules.portfolio import get_portfolio
+from claude_invest.modules.learner import analyze_day
+from claude_invest.modules.portfolio_tracker import get_allocation
+from claude_invest.modules.strategy import load_lessons
 
 DEFAULT_DB_PATH = "claude_invest.db"
 
@@ -86,6 +89,33 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
             "latest_daily_pnl": snapshots[0]["daily_pnl"],
             "total_snapshots": len(snapshots),
         }
+
+    @app.get("/api/review-day")
+    def api_review_day(date: str | None = None):
+        db = get_db()
+        report = analyze_day(db, date)
+        db.close()
+        return report
+
+    @app.get("/api/allocation")
+    def api_allocation():
+        config = load_config()
+        portfolio_data = get_portfolio()
+        allocation = get_allocation(config, portfolio_data["positions"])
+        return allocation
+
+    @app.get("/api/lessons")
+    def api_lessons():
+        return load_lessons("lessons")
+
+    @app.get("/api/strategy-brief")
+    def api_strategy_brief():
+        import os
+        path = os.path.join("lessons", "strategy-brief.md")
+        if os.path.exists(path):
+            with open(path) as f:
+                return {"brief": f.read()}
+        return {"brief": "No strategy brief yet. Run review-day first."}
 
     return app
 
