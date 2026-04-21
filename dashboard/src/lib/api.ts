@@ -71,3 +71,20 @@ export async function updateConfig(config: Config): Promise<void> {
     body: JSON.stringify(config),
   });
 }
+
+export function useLessons() {
+  return useSWR<{ patterns: Array<{ signal_combo: string; wins: number; losses: number; total: number; win_rate: number; avg_pnl: number; confidence: string }>; last_updated: string | null }>("/api/lessons", fetcher, { refreshInterval: 60000 });
+}
+
+export function useAllocation() {
+  return useSWR<{
+    total_value: number;
+    tiers: Record<string, { target: number; actual: number; drift: number; value: number; alert: boolean }>;
+    sectors: Record<string, { value: number; positions: string[]; pct: number }>;
+    positions?: Array<{ symbol: string; tier: string; [key: string]: unknown }>;
+  }>("/api/allocation", fetcher, { refreshInterval: 30000 });
+}
+
+export function useStrategyBrief() {
+  return useSWR<{ brief: string }>("/api/strategy-brief", fetcher, { refreshInterval: 60000 });
+}
