@@ -25,6 +25,12 @@ For each stock position, run:
 ```
 Note any signals that suggest selling at next market open. Log your observations.
 
+### 2b. WATCHLIST CHECK
+```bash
+.venv/bin/python -m claude_invest.main watchlist
+```
+For each crypto watchlist ticker not held, analyze it. Flag any with entry signals for the next market open (stocks) or immediate action (crypto).
+
 ### 3. CRYPTO SCAN
 Analyze the top crypto pairs available on Alpaca:
 ```bash

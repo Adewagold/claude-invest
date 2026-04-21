@@ -26,6 +26,12 @@ For any open crypto positions (symbols containing /), run:
 ```
 Sell if sentiment flipped negative and technicals bearish, or if stop-loss (-5%) hit.
 
+### 2b. WATCHLIST CHECK
+```bash
+.venv/bin/python -m claude_invest.main watchlist
+```
+For any crypto watchlist tickers not held (e.g., DOGE/USD, SOL/USD), analyze them. If signals are strong, consider entry.
+
 ### 3. CRYPTO OPPORTUNITIES
 ```bash
 .venv/bin/python -m claude_invest.main analyze BTC/USD

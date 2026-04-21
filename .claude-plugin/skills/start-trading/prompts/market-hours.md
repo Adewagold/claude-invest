@@ -50,7 +50,22 @@ If selling:
 ```
 Look at flagged candidates (where `flagged: true`). Skip any symbols you already hold.
 
-### 4. EVALUATION (for top 3 flagged candidates)
+### 3b. WATCHLIST CHECK
+```bash
+.venv/bin/python -m claude_invest.main watchlist
+```
+For each watchlist ticker NOT already held, run:
+```bash
+.venv/bin/python -m claude_invest.main analyze {SYMBOL}
+```
+If a watchlist ticker hits entry criteria (RSI 30-65, MACD above signal, bullish/neutral trend), flag it as a candidate alongside scanner results. Watchlist tickers get priority over scanner discoveries since they're pre-vetted by the user.
+
+Also: if during analysis you discover a strong setup on a ticker NOT on the watchlist, add it:
+```bash
+.venv/bin/python -m claude_invest.main watchlist-add {SYMBOL} "reason"
+```
+
+### 4. EVALUATION (for top 3 flagged candidates + watchlist signals)
 For each candidate:
 ```bash
 .venv/bin/python -m claude_invest.main analyze {SYMBOL}
