@@ -7,6 +7,7 @@ from claude_invest.modules.portfolio import get_portfolio
 from claude_invest.modules.learner import analyze_day
 from claude_invest.modules.portfolio_tracker import get_allocation
 from claude_invest.modules.strategy import load_lessons
+from claude_invest.modules.watchlist import load_watchlist, add_to_watchlist, remove_from_watchlist
 
 DEFAULT_DB_PATH = "claude_invest.db"
 
@@ -116,6 +117,20 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
             with open(path) as f:
                 return {"brief": f.read()}
         return {"brief": "No strategy brief yet. Run review-day first."}
+
+    @app.get("/api/watchlist")
+    def api_watchlist():
+        return {"watchlist": load_watchlist(), "count": len(load_watchlist())}
+
+    @app.post("/api/watchlist")
+    def api_watchlist_add(body: dict):
+        symbol = body.get("symbol", "")
+        note = body.get("note", "")
+        return add_to_watchlist(symbol, note)
+
+    @app.delete("/api/watchlist/{symbol}")
+    def api_watchlist_remove(symbol: str):
+        return remove_from_watchlist(symbol)
 
     return app
 
