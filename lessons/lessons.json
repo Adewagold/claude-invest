@@ -1,1 +1,17 @@
-{"patterns": [], "last_updated": null}
+{
+  "patterns": [
+    {
+      "signal_combo": "macd_above_signal + rsi_50_70 + sent_neutral + trend_bullish",
+      "wins": 1,
+      "losses": 0,
+      "total": 1,
+      "win_rate": 1.0,
+      "avg_pnl": 0.05,
+      "confidence": "low",
+      "tickers": [
+        "CMND"
+      ]
+    }
+  ],
+  "last_updated": "2026-04-21"
+}
