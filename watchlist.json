@@ -1,0 +1,9 @@
+{
+  "tickers": [
+    {"symbol": "NVDA", "note": "AI leader, wait for dip", "added": "2026-04-21"},
+    {"symbol": "AAPL", "note": "Core tech holding", "added": "2026-04-21"},
+    {"symbol": "TSLA", "note": "Volatile but opportunity", "added": "2026-04-21"},
+    {"symbol": "DOGE/USD", "note": "Meme crypto allocation", "added": "2026-04-21"},
+    {"symbol": "SOL/USD", "note": "Solana ecosystem", "added": "2026-04-21"}
+  ]
+}
