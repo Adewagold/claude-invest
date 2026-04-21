@@ -40,6 +40,17 @@ def sample_config(tmp_path):
             "sentiment_threshold": 0.3,
         },
         "trading_style": "mixed",
+        "portfolio": {
+            "allocation": {"safe": 0.30, "neutral": 0.40, "risk": 0.30},
+            "drift_threshold": 0.10,
+            "sectors": {"overrides": {"TRUMP/USD": "meme"}},
+            "time_horizon": {"short_term_max_days": 30, "long_term_min_days": 30},
+        },
+        "risk_tiers": {
+            "safe": ["bonds", "reits", "dividend", "utilities", "consumer_staples"],
+            "neutral": ["large_cap", "technology", "healthcare", "financial", "industrial", "energy"],
+            "risk": ["small_cap", "biotech", "meme", "crypto", "penny", "speculative"],
+        },
     }
     config_path = tmp_path / "settings.yaml"
     config_path.write_text(yaml.dump(config))

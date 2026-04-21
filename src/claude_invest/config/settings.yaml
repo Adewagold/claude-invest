@@ -23,3 +23,43 @@ discovery:
   sentiment_threshold: 0.3
 
 trading_style: mixed
+
+portfolio:
+  allocation:
+    safe: 0.30
+    neutral: 0.40
+    risk: 0.30
+  drift_threshold: 0.10
+  sectors:
+    overrides:
+      TRUMP/USD: "meme"
+      DOGE/USD: "meme"
+      SHIB/USD: "meme"
+      BONK/USD: "meme"
+      WIF/USD: "meme"
+      PEPE/USD: "meme"
+  time_horizon:
+    short_term_max_days: 30
+    long_term_min_days: 30
+
+risk_tiers:
+  safe:
+    - bonds
+    - reits
+    - dividend
+    - utilities
+    - consumer_staples
+  neutral:
+    - large_cap
+    - technology
+    - healthcare
+    - financial
+    - industrial
+    - energy
+  risk:
+    - small_cap
+    - biotech
+    - meme
+    - crypto
+    - penny
+    - speculative

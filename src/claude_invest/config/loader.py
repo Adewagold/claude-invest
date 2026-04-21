@@ -11,6 +11,7 @@ REQUIRED_KEYS = [
     "mode", "capital", "max_positions", "max_per_ticker",
     "position_size_pct", "daily_loss_limit", "pdt_tracking",
     "exit_strategy", "polling", "discovery", "trading_style",
+    "portfolio", "risk_tiers",
 ]
 
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "settings.yaml"
