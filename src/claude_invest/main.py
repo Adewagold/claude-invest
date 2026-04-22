@@ -13,6 +13,7 @@ from claude_invest.modules.learner import analyze_day, score_patterns
 from claude_invest.modules.portfolio_tracker import get_allocation
 from claude_invest.modules.strategy import update_lessons, build_strategy_brief, load_lessons
 from claude_invest.modules.watchlist import load_watchlist, add_to_watchlist, remove_from_watchlist, check_watchlist
+from claude_invest.modules.strategy_engine import get_active_strategies, get_all_strategy_performance
 
 DB_PATH = "claude_invest.db"
 LESSONS_DIR = "lessons"
@@ -164,6 +165,19 @@ def cmd_watchlist_remove(symbol: str):
     _output(result)
 
 
+def cmd_strategies():
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    results = get_all_strategy_performance(db, config)
+    strategies = get_active_strategies(config)
+    db.close()
+    _output({
+        "strategies": results,
+        "active_count": len(strategies),
+    })
+
+
 def main():
     if len(sys.argv) < 2:
         _output({"error": "Usage: claude-invest <command> [args]", "commands": [
@@ -171,6 +185,7 @@ def main():
             "execute <buy|sell> <ticker> <qty>", "log-decision <json>",
             "review-day [date]", "allocation", "lessons",
             "watchlist", "watchlist-add <symbol> [note]", "watchlist-remove <symbol>",
+            "strategies",
         ]})
         sys.exit(1)
 
@@ -201,6 +216,8 @@ def main():
         cmd_watchlist_add(sys.argv[2], note)
     elif command == "watchlist-remove" and len(sys.argv) >= 3:
         cmd_watchlist_remove(sys.argv[2])
+    elif command == "strategies":
+        cmd_strategies()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)

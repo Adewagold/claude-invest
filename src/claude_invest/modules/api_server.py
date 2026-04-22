@@ -8,6 +8,7 @@ from claude_invest.modules.learner import analyze_day
 from claude_invest.modules.portfolio_tracker import get_allocation
 from claude_invest.modules.strategy import load_lessons
 from claude_invest.modules.watchlist import load_watchlist, add_to_watchlist, remove_from_watchlist
+from claude_invest.modules.strategy_engine import get_active_strategies, get_all_strategy_performance
 
 DEFAULT_DB_PATH = "claude_invest.db"
 
@@ -131,6 +132,14 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     @app.delete("/api/watchlist/{symbol}")
     def api_watchlist_remove(symbol: str):
         return remove_from_watchlist(symbol)
+
+    @app.get("/api/strategies")
+    def api_strategies():
+        config = load_config()
+        db = get_db()
+        results = get_all_strategy_performance(db, config)
+        db.close()
+        return {"strategies": results}
 
     return app
 
