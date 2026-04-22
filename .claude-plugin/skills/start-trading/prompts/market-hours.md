@@ -11,6 +11,23 @@ Apply any RULES strictly — these are high-confidence patterns from past trades
 Consider OBSERVATIONS as guidance.
 Check ALLOCATION ALERTS before opening new positions in overweight tiers.
 
+## Active Strategies
+
+Check active strategies:
+```bash
+.venv/bin/python -m claude_invest.main strategies
+```
+
+Run each active strategy's logic during evaluation:
+
+**Mean Reversion (RSI 2):** Buy when RSI(2) < 25 AND price > 200 MA. Sell when RSI(2) > 65 or after 5 bars. Stop: 1%. Target: 2%. Use for large-cap stocks.
+
+**Trend Pullback (MACD 5/35/5):** Buy when MACD(5,35,5) golden cross AND RSI(14) < 40 AND price > 200 MA. Sell when MACD death cross AND RSI > 60. Stop: 2%. Target: 4%.
+
+**Momentum (current):** Buy when RSI(14) 30-65 AND MACD crossover AND bullish trend. Stop: 5%. Target: 10%. Used for scanner discoveries.
+
+Tag every trade with its strategy name when logging decisions (include "strategy_id" in signals_snapshot).
+
 ## Determine Current Window
 
 Check the current time (ET) and decide your polling behavior:
