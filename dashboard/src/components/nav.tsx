@@ -11,6 +11,7 @@ const links = [
   { href: "/discovery", label: "Discovery", icon: "🔍" },
   { href: "/lessons", label: "Lessons", icon: "🧠" },
   { href: "/watchlist", label: "Watchlist", icon: "👁" },
+  { href: "/strategies", label: "Strategies", icon: "🎯" },
   { href: "/config", label: "Config", icon: "⚙️" },
 ];
 
