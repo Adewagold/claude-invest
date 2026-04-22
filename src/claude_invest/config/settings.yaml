@@ -63,3 +63,55 @@ risk_tiers:
     - crypto
     - penny
     - speculative
+
+strategies:
+  active:
+    - mean_reversion
+    - trend_pullback
+    - momentum
+
+  mean_reversion:
+    name: "RSI(2) Mean Reversion"
+    description: "Buy oversold bounces, sell overbought. 73% win rate backtested."
+    enabled: true
+    capital_pct: 0.33
+    params:
+      rsi_period: 2
+      rsi_buy_threshold: 25
+      rsi_sell_threshold: 65
+      max_hold_bars: 5
+      require_above_ma200: true
+      stop_loss_pct: 0.01
+      take_profit_pct: 0.02
+    best_for: "ranging/choppy markets, large-cap stocks"
+
+  trend_pullback:
+    name: "MACD 5/35/5 Trend"
+    description: "Buy dips in uptrends with custom MACD. 65-73% in trends."
+    enabled: true
+    capital_pct: 0.34
+    params:
+      macd_fast: 5
+      macd_slow: 35
+      macd_signal: 5
+      rsi_period: 14
+      rsi_buy_threshold: 40
+      rsi_sell_threshold: 60
+      require_above_ma200: true
+      stop_loss_pct: 0.02
+      take_profit_pct: 0.04
+    best_for: "trending markets"
+
+  momentum:
+    name: "Momentum Breakout"
+    description: "Current strategy - MACD crossover + RSI sweet spot."
+    enabled: true
+    capital_pct: 0.33
+    params:
+      rsi_period: 14
+      rsi_entry_min: 30
+      rsi_entry_max: 65
+      macd_crossover: true
+      stop_loss_pct: 0.05
+      take_profit_pct: 0.10
+    best_for: "breakouts, discovery scanner"
