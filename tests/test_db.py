@@ -157,6 +157,50 @@ def test_insert_change_log(tmp_db_path):
     db.close()
 
 
+def test_revert_change(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.insert_change_log({
+        "parameter_path": "strategies.mean_reversion.params.rsi_buy_threshold",
+        "old_value": "25", "new_value": "20",
+        "reason": "test", "trade_count": 10, "auto_applied": True,
+    })
+    changes = db.get_change_log()
+    change_id = changes[0]["id"]
+    db.revert_change(change_id, "Win rate dropped")
+    updated = db.get_change_log()
+    assert updated[0]["reverted"] == 1
+    assert updated[0]["revert_reason"] == "Win rate dropped"
+    assert updated[0]["reverted_at"] is not None
+    db.close()
+
+
+def test_get_active_changes_filters_reverted(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    # Insert active change (will get id=1)
+    db.insert_change_log({
+        "parameter_path": "strategies.mean_reversion.params.rsi_buy_threshold",
+        "old_value": "25", "new_value": "20",
+        "reason": "test", "trade_count": 10, "auto_applied": True,
+    })
+    # Insert reverted change (will get id=2)
+    db.insert_change_log({
+        "parameter_path": "strategies.momentum.params.stop_loss_pct",
+        "old_value": "0.05", "new_value": "0.04",
+        "reason": "test", "trade_count": 10, "auto_applied": True,
+    })
+    # Look up by parameter_path to get the correct id regardless of ordering
+    all_changes = db.get_change_log()
+    momentum_id = next(c["id"] for c in all_changes if "momentum" in c["parameter_path"])
+    db.revert_change(momentum_id, "Failed eval")
+
+    active = db.get_active_changes()
+    assert len(active) == 1
+    assert active[0]["parameter_path"] == "strategies.mean_reversion.params.rsi_buy_threshold"
+    db.close()
+
+
 def test_get_matched_trades_by_position_id(tmp_db_path):
     db = Database(tmp_db_path)
     db.initialize()

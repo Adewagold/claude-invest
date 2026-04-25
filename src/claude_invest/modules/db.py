@@ -269,6 +269,7 @@ class Database:
             LEFT JOIN trades st ON s.position_id = st.position_id AND st.side = 'sell'
             WHERE b.action = 'buy'
               AND b.position_id IS NOT NULL
+              AND bt.price IS NOT NULL AND st.price IS NOT NULL
             ORDER BY b.timestamp DESC
         """)
         return [dict(row) for row in cursor.fetchall()]
