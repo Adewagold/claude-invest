@@ -46,7 +46,10 @@ def update_lessons(lessons_dir: str, patterns: list[dict], date: str):
             f.write(f"- [{status}] {p['signal_combo']}: {p['wins']}W/{p['losses']}L (avg P&L: {p['avg_pnl']:.2f})\n")
 
 
-def build_strategy_brief(lessons_dir: str, allocation: dict) -> str:
+def build_strategy_brief(lessons_dir: str, allocation: dict, *,
+                         dimension_insights: dict | None = None,
+                         active_changes: list[dict] | None = None,
+                         proposed_changes: list[dict] | None = None) -> str:
     lessons = load_lessons(lessons_dir)
     patterns = lessons.get("patterns", [])
 
@@ -75,6 +78,42 @@ def build_strategy_brief(lessons_dir: str, allocation: dict) -> str:
         for o in sorted(observations, key=lambda x: x.get("total", 0), reverse=True)[:10]:
             wr = o.get("win_rate", 0)
             lines.append(f"- {o['signal_combo']}: {o.get('wins',0)}W/{o.get('losses',0)}L ({wr:.0%} win rate)")
+        lines.append("")
+
+    if active_changes or proposed_changes:
+        lines.append("## PARAMETER CHANGES ACTIVE")
+        for c in (active_changes or []):
+            param = c["parameter_path"].split(".")[-1]
+            lines.append(
+                f"- {c['parameter_path']}: {c['old_value']} → {c['new_value']}"
+                f" (applied {c.get('timestamp', 'unknown')}, {c.get('trade_count', 0)} trades)"
+            )
+        for c in (proposed_changes or []):
+            param = c["parameter_path"].split(".")[-1]
+            lines.append(
+                f"- PROPOSED: {c['parameter_path']}: {c['old_value']} → {c['new_value']}"
+                f" (needs {c.get('trade_count', 0)} more trades)"
+            )
+        lines.append("")
+
+    if dimension_insights:
+        lines.append("## DIMENSION INSIGHTS")
+        best_time = dimension_insights.get("best_time")
+        if best_time:
+            lines.append(
+                f"- Best time: {best_time['bucket']} ({best_time['win_rate']:.0%} win rate, {best_time['total']} trades)"
+            )
+        best_duration = dimension_insights.get("best_duration")
+        if best_duration:
+            lines.append(
+                f"- Best duration: {best_duration['bucket']} ({best_duration['win_rate']:.0%} win rate, {best_duration['total']} trades)"
+            )
+        volatility_note = dimension_insights.get("volatility_note")
+        if volatility_note:
+            lines.append(f"- Volatility: {volatility_note}")
+        asset_note = dimension_insights.get("asset_note")
+        if asset_note:
+            lines.append(f"- Asset: {asset_note}")
         lines.append("")
 
     tiers = allocation.get("tiers", {})

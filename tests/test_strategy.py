@@ -89,3 +89,57 @@ def test_build_strategy_brief(lessons_dir):
 
     brief_path = os.path.join(lessons_dir, "strategy-brief.md")
     assert os.path.exists(brief_path)
+
+
+def test_build_strategy_brief_with_dimensions(lessons_dir):
+    patterns = [
+        {
+            "signal_combo": "macd_above_signal + rsi_30_50",
+            "wins": 4, "losses": 0, "total": 4,
+            "win_rate": 1.0, "avg_pnl": 2.0, "confidence": "high",
+        },
+    ]
+    update_lessons(lessons_dir, patterns, "2026-04-25")
+
+    allocation = {
+        "tiers": {
+            "safe": {"target": 0.30, "actual": 0.0, "drift": -0.30, "alert": True},
+        },
+        "total_value": 5500,
+    }
+
+    dimension_insights = {
+        "best_time": {"bucket": "market_open", "win_rate": 0.80, "total": 5},
+        "best_duration": {"bucket": "swing_short", "win_rate": 0.75, "total": 6},
+        "volatility_note": "High volatility favors mean_reversion",
+        "asset_note": "Crypto momentum is 0W/1L",
+    }
+
+    active_changes = [
+        {
+            "parameter_path": "strategies.mean_reversion.params.rsi_buy_threshold",
+            "old_value": "25", "new_value": "20",
+            "timestamp": "2026-04-24", "trade_count": 12, "auto_applied": True,
+        },
+    ]
+
+    proposed_changes = [
+        {
+            "parameter_path": "strategies.trend_pullback.params.stop_loss_pct",
+            "old_value": "0.02", "new_value": "0.025",
+            "trade_count": 7,
+        },
+    ]
+
+    brief = build_strategy_brief(
+        lessons_dir, allocation,
+        dimension_insights=dimension_insights,
+        active_changes=active_changes,
+        proposed_changes=proposed_changes,
+    )
+
+    assert "PARAMETER CHANGES ACTIVE" in brief
+    assert "rsi_buy_threshold" in brief
+    assert "DIMENSION INSIGHTS" in brief
+    assert "market_open" in brief
+    assert "PROPOSED" in brief or "proposed" in brief.lower()
