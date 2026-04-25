@@ -1,5 +1,7 @@
 import json
 import sys
+import uuid
+from collections import defaultdict
 
 from claude_invest.config.loader import load_config
 from claude_invest.modules.db import Database
@@ -88,19 +90,18 @@ def cmd_risk_check(ticker: str, qty: int, price: float):
     _output(result)
 
 
-def cmd_execute(side: str, ticker: str, qty: float):
+def cmd_execute(side: str, ticker: str, qty: float, position_id: str | None = None):
     result = execute_order(symbol=ticker, side=side, qty=qty)
     db = Database(DB_PATH)
     db.initialize()
     if result["status"] != "error":
         db.insert_trade({
-            "symbol": ticker,
-            "side": side,
-            "qty": qty,
+            "symbol": ticker, "side": side, "qty": qty,
             "price": result.get("filled_price") or 0,
             "order_id": result["order_id"],
             "trade_type": "market",
             "status": result["status"],
+            "position_id": position_id,
         })
     db.close()
     _output(result)
@@ -110,6 +111,8 @@ def cmd_log_decision(payload_json: str):
     payload = json.loads(payload_json)
     db = Database(DB_PATH)
     db.initialize()
+    if payload.get("action") == "buy" and "position_id" not in payload:
+        payload["position_id"] = str(uuid.uuid4())
     db.insert_decision(payload)
     db.close()
     _output({"status": "logged", "decision": payload})
@@ -117,21 +120,175 @@ def cmd_log_decision(payload_json: str):
 
 def cmd_review_day(date: str | None = None):
     config = load_config()
+    from claude_invest.config.loader import DEFAULT_CONFIG_PATH
     db = Database(DB_PATH)
     db.initialize()
-    report = analyze_day(db, date)
-    from claude_invest.modules.portfolio import get_portfolio
+
+    from claude_invest.modules.learner import _match_trades
+    matched = _match_trades(db)
+    closed = [m for m in matched if m["status"] == "closed"]
+
+    from claude_invest.modules.pattern_analyzer import analyze_patterns
+    learning_report = analyze_patterns(closed)
+
+    trades_by_strategy = defaultdict(list)
+    for t in closed:
+        sid = t.get("strategy_id") or "unknown"
+        trades_by_strategy[sid].append(t)
+
+    from claude_invest.modules.optimizer import (
+        evaluate_parameters, apply_change, check_evaluation_windows, can_apply_more_changes
+    )
+    reverted = check_evaluation_windows(db, dict(trades_by_strategy), DEFAULT_CONFIG_PATH)
+    proposals = evaluate_parameters(dict(trades_by_strategy), config)
+
+    applied = []
+    proposed = []
+    for p in proposals:
+        if p["auto_applied"] and can_apply_more_changes(db):
+            apply_change(config_path=str(DEFAULT_CONFIG_PATH), db=db, **p)
+            applied.append(p)
+        else:
+            p["auto_applied"] = False
+            db.insert_change_log(p)
+            proposed.append(p)
+
+    dimension_insights = {}
+    if learning_report["time_of_day"]:
+        best_time = max(learning_report["time_of_day"], key=lambda x: x.get("win_rate", 0))
+        if best_time.get("total", 0) >= 5:
+            dimension_insights["best_time"] = best_time
+    if learning_report["hold_duration"]:
+        best_dur = max(learning_report["hold_duration"], key=lambda x: x.get("win_rate", 0))
+        if best_dur.get("total", 0) >= 5:
+            dimension_insights["best_duration"] = best_dur
+
     try:
+        from claude_invest.modules.portfolio import get_portfolio
         portfolio = get_portfolio()
         allocation = get_allocation(config, portfolio["positions"])
     except Exception:
         allocation = {"tiers": {}, "total_value": 0}
+
+    active_changes = db.get_active_changes()
+
+    report = analyze_day(db, date)
     update_lessons(LESSONS_DIR, report["patterns"], report["date"])
-    brief = build_strategy_brief(LESSONS_DIR, allocation)
+    brief = build_strategy_brief(
+        LESSONS_DIR, allocation,
+        dimension_insights=dimension_insights,
+        active_changes=active_changes,
+        proposed_changes=proposed,
+    )
+
+    _write_daily_report(report, learning_report, applied, proposed, reverted)
+
+    report["learning_report"] = learning_report
+    report["applied_changes"] = applied
+    report["proposed_changes"] = proposed
+    report["reverted_changes"] = reverted
     report["allocation"] = allocation
     report["strategy_brief"] = brief
     db.close()
     _output(report)
+
+
+def _write_daily_report(report: dict, learning_report: dict,
+                        applied: list, proposed: list, reverted: list):
+    import os
+    date = report.get("date", "unknown")
+    daily_path = os.path.join(LESSONS_DIR, "daily", f"{date}.md")
+    os.makedirs(os.path.dirname(daily_path), exist_ok=True)
+
+    lines = [f"# Daily Learning Report — {date}", ""]
+    lines.append("## Performance Summary")
+    lines.append(f"- Trades closed: {report['total_trades']} ({report['wins']}W/{report['losses']}L)")
+    lines.append(f"- Total P&L: ${report['total_pnl']:.2f}")
+    lines.append(f"- Win rate: {report['win_rate']:.0%}")
+    lines.append("")
+
+    lines.append("## Dimension Analysis")
+    if learning_report.get("time_of_day"):
+        lines.append("### Time-of-Day")
+        lines.append("| Window | W/L | Avg P&L | Win Rate |")
+        lines.append("|--------|-----|---------|----------|")
+        for b in learning_report["time_of_day"]:
+            lines.append(f"| {b['bucket']} | {b['wins']}W/{b['losses']}L | ${b['avg_pnl']:.2f} | {b['win_rate']:.0%} |")
+        lines.append("")
+
+    if learning_report.get("hold_duration"):
+        lines.append("### Hold Duration")
+        lines.append("| Bucket | W/L | Avg P&L | Win Rate |")
+        lines.append("|--------|-----|---------|----------|")
+        for b in learning_report["hold_duration"]:
+            lines.append(f"| {b['bucket']} | {b['wins']}W/{b['losses']}L | ${b['avg_pnl']:.2f} | {b['win_rate']:.0%} |")
+        lines.append("")
+
+    if learning_report.get("asset_class"):
+        lines.append("### Asset Class x Strategy")
+        lines.append("| Class | Strategy | W/L | Win Rate |")
+        lines.append("|-------|----------|-----|----------|")
+        for a in learning_report["asset_class"]:
+            lines.append(f"| {a['asset_class']} | {a['strategy_id']} | {a['wins']}W/{a['losses']}L | {a['win_rate']:.0%} |")
+        lines.append("")
+
+    if applied or proposed or reverted:
+        lines.append("## Parameter Changes")
+        for c in applied:
+            lines.append(f"- AUTO-APPLIED: {c['parameter_path']}: {c['old_value']} → {c['new_value']} ({c['reason']})")
+        for c in proposed:
+            lines.append(f"- PROPOSED: {c['parameter_path']}: {c['old_value']} → {c['new_value']} ({c['reason']})")
+        for c in reverted:
+            lines.append(f"- REVERTED: {c.get('parameter_path', 'unknown')} (failed evaluation)")
+        lines.append("")
+
+    with open(daily_path, "w") as f:
+        f.write("\n".join(lines))
+
+
+def cmd_learning_report():
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.modules.learner import _match_trades
+    from claude_invest.modules.pattern_analyzer import analyze_patterns
+    matched = _match_trades(db)
+    closed = [m for m in matched if m["status"] == "closed"]
+    report = analyze_patterns(closed)
+    db.close()
+    _output(report)
+
+
+def cmd_change_log():
+    db = Database(DB_PATH)
+    db.initialize()
+    changes = db.get_change_log()
+    db.close()
+    _output({"changes": changes, "count": len(changes)})
+
+
+def cmd_revert_change(change_id: int):
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.config.loader import DEFAULT_CONFIG_PATH
+    from claude_invest.modules.optimizer import apply_change
+    changes = db.get_change_log()
+    change = next((c for c in changes if c["id"] == change_id), None)
+    if change:
+        apply_change(
+            config_path=str(DEFAULT_CONFIG_PATH),
+            db=db,
+            parameter_path=change["parameter_path"],
+            old_value=change["new_value"],
+            new_value=change["old_value"],
+            reason="Manual revert",
+            trade_count=change.get("trade_count", 0),
+            auto_applied=False,
+        )
+        db.revert_change(change_id, reason="Manual revert")
+        _output({"status": "reverted", "change_id": change_id})
+    else:
+        _output({"error": f"Change {change_id} not found"})
+    db.close()
 
 
 def cmd_allocation():
@@ -186,6 +343,7 @@ def main():
             "review-day [date]", "allocation", "lessons",
             "watchlist", "watchlist-add <symbol> [note]", "watchlist-remove <symbol>",
             "strategies",
+            "learning-report", "change-log", "revert-change <change_id>",
         ]})
         sys.exit(1)
 
@@ -218,6 +376,12 @@ def main():
         cmd_watchlist_remove(sys.argv[2])
     elif command == "strategies":
         cmd_strategies()
+    elif command == "learning-report":
+        cmd_learning_report()
+    elif command == "change-log":
+        cmd_change_log()
+    elif command == "revert-change" and len(sys.argv) >= 3:
+        cmd_revert_change(int(sys.argv[2]))
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
