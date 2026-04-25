@@ -84,7 +84,26 @@ class Database:
                 trade_id TEXT NOT NULL,
                 date TEXT NOT NULL DEFAULT (date('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS change_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+                parameter_path TEXT NOT NULL,
+                old_value TEXT NOT NULL,
+                new_value TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                trade_count INTEGER NOT NULL,
+                auto_applied BOOLEAN NOT NULL DEFAULT 0,
+                reverted BOOLEAN DEFAULT 0,
+                reverted_at TEXT,
+                revert_reason TEXT
+            );
         """)
+        for table in ("decisions", "trades"):
+            cursor = conn.execute(f"PRAGMA table_info({table})")
+            columns = {row[1] for row in cursor.fetchall()}
+            if "position_id" not in columns:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN position_id TEXT")
         conn.commit()
 
     def list_tables(self) -> list[str]:
@@ -97,9 +116,10 @@ class Database:
     def insert_trade(self, trade: dict):
         conn = self._get_conn()
         conn.execute(
-            "INSERT INTO trades (symbol, side, qty, price, order_id, trade_type, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO trades (symbol, side, qty, price, order_id, trade_type, status, position_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (trade["symbol"], trade["side"], trade["qty"], trade["price"],
-             trade.get("order_id"), trade.get("trade_type"), trade.get("status")),
+             trade.get("order_id"), trade.get("trade_type"), trade.get("status"),
+             trade.get("position_id")),
         )
         conn.commit()
 
@@ -119,9 +139,10 @@ class Database:
     def insert_decision(self, decision: dict):
         conn = self._get_conn()
         conn.execute(
-            "INSERT INTO decisions (ticker, action, reasoning, signals_snapshot) VALUES (?, ?, ?, ?)",
+            "INSERT INTO decisions (ticker, action, reasoning, signals_snapshot, position_id) VALUES (?, ?, ?, ?, ?)",
             (decision["ticker"], decision["action"],
-             decision.get("reasoning"), decision.get("signals_snapshot")),
+             decision.get("reasoning"), decision.get("signals_snapshot"),
+             decision.get("position_id")),
         )
         conn.commit()
 
@@ -195,6 +216,62 @@ class Database:
             "SELECT COUNT(*) as cnt FROM pdt_tracker WHERE date >= ?", (cutoff,)
         )
         return cursor.fetchone()["cnt"]
+
+    def insert_change_log(self, entry: dict):
+        conn = self._get_conn()
+        conn.execute(
+            "INSERT INTO change_log (parameter_path, old_value, new_value, reason, trade_count, auto_applied) VALUES (?, ?, ?, ?, ?, ?)",
+            (entry["parameter_path"], entry["old_value"], entry["new_value"],
+             entry["reason"], entry["trade_count"], entry.get("auto_applied", False)),
+        )
+        conn.commit()
+
+    def get_change_log(self, limit: int = 50) -> list[dict]:
+        conn = self._get_conn()
+        cursor = conn.execute(
+            "SELECT * FROM change_log ORDER BY timestamp DESC LIMIT ?", (limit,)
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+    def revert_change(self, change_id: int, reason: str):
+        conn = self._get_conn()
+        conn.execute(
+            "UPDATE change_log SET reverted=1, reverted_at=datetime('now'), revert_reason=? WHERE id=?",
+            (reason, change_id),
+        )
+        conn.commit()
+
+    def get_active_changes(self) -> list[dict]:
+        conn = self._get_conn()
+        cursor = conn.execute(
+            "SELECT * FROM change_log WHERE auto_applied=1 AND reverted=0 ORDER BY timestamp DESC"
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_matched_trades(self) -> list[dict]:
+        conn = self._get_conn()
+        cursor = conn.execute("""
+            SELECT
+                b.position_id,
+                b.ticker,
+                b.timestamp as entry_time,
+                b.signals_snapshot as entry_signals,
+                b.reasoning as entry_reasoning,
+                s.timestamp as exit_time,
+                s.signals_snapshot as exit_signals,
+                s.reasoning as exit_reasoning,
+                bt.price as entry_price,
+                bt.trade_type as strategy_id,
+                st.price as exit_price
+            FROM decisions b
+            JOIN decisions s ON b.position_id = s.position_id AND s.action = 'sell'
+            LEFT JOIN trades bt ON b.position_id = bt.position_id AND bt.side = 'buy'
+            LEFT JOIN trades st ON s.position_id = st.position_id AND st.side = 'sell'
+            WHERE b.action = 'buy'
+              AND b.position_id IS NOT NULL
+            ORDER BY b.timestamp DESC
+        """)
+        return [dict(row) for row in cursor.fetchall()]
 
     def close(self):
         if self._conn:
