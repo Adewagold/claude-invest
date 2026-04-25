@@ -9,3 +9,4 @@ dist/
 .pytest_cache/
 .remember/
 .claude/settings.local.json
+.worktrees/
