@@ -1,6 +1,6 @@
 import json
 import pytest
-from claude_invest.modules.db import Database
+from claude_invest.modules.db import Database  # noqa: F401 - used in fixtures
 from claude_invest.modules.learner import (
     parse_signal_combo,
     analyze_day,
@@ -102,3 +102,82 @@ def test_analyze_day(seeded_db):
     assert "patterns" in report
     assert "total_pnl" in report
     assert report["total_trades"] >= 2
+
+
+@pytest.fixture
+def seeded_db_with_position_ids(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    # Winning trade with position_id
+    db.insert_decision({
+        "ticker": "BTC/USD", "action": "buy", "reasoning": "MACD crossover",
+        "signals_snapshot": json.dumps({
+            "rsi": 45, "macd": -200, "macd_signal": -250,
+            "trend": "neutral", "sentiment": 0.1, "price": 75000,
+        }),
+        "position_id": "pos-win-1",
+    })
+    db.insert_decision({
+        "ticker": "BTC/USD", "action": "sell", "reasoning": "Take profit",
+        "signals_snapshot": json.dumps({"price": 76000}),
+        "position_id": "pos-win-1",
+    })
+    db.insert_trade({
+        "symbol": "BTC/USD", "side": "buy", "qty": 0.001, "price": 75000,
+        "order_id": "t1", "trade_type": "momentum", "status": "filled",
+        "position_id": "pos-win-1",
+    })
+    db.insert_trade({
+        "symbol": "BTC/USD", "side": "sell", "qty": 0.001, "price": 76000,
+        "order_id": "t2", "trade_type": "momentum", "status": "filled",
+        "position_id": "pos-win-1",
+    })
+    # Losing trade with position_id
+    db.insert_decision({
+        "ticker": "CMND", "action": "buy", "reasoning": "FDA catalyst",
+        "signals_snapshot": json.dumps({
+            "rsi": 74.5, "macd": 0.13, "macd_signal": 0.06,
+            "trend": "bullish", "sentiment": 0.2, "price": 1.45,
+        }),
+        "position_id": "pos-loss-1",
+    })
+    db.insert_decision({
+        "ticker": "CMND", "action": "sell", "reasoning": "Stop loss",
+        "signals_snapshot": json.dumps({"price": 1.30}),
+        "position_id": "pos-loss-1",
+    })
+    db.insert_trade({
+        "symbol": "CMND", "side": "buy", "qty": 80, "price": 1.45,
+        "order_id": "t3", "trade_type": "mean_reversion", "status": "filled",
+        "position_id": "pos-loss-1",
+    })
+    db.insert_trade({
+        "symbol": "CMND", "side": "sell", "qty": 80, "price": 1.30,
+        "order_id": "t4", "trade_type": "mean_reversion", "status": "filled",
+        "position_id": "pos-loss-1",
+    })
+    return db
+
+
+def test_match_trades_uses_position_id(seeded_db_with_position_ids):
+    from claude_invest.modules.learner import _match_trades
+    matched = _match_trades(seeded_db_with_position_ids)
+    closed = [m for m in matched if m["status"] == "closed"]
+    assert len(closed) == 2
+    win = [m for m in closed if m["ticker"] == "BTC/USD"][0]
+    assert win["win"] is True
+    assert win["pnl"] == 1000
+    assert win["position_id"] == "pos-win-1"
+    assert win["strategy_id"] == "momentum"
+    loss = [m for m in closed if m["ticker"] == "CMND"][0]
+    assert loss["win"] is False
+    assert loss["position_id"] == "pos-loss-1"
+    assert loss["strategy_id"] == "mean_reversion"
+
+
+def test_match_trades_falls_back_to_fifo(seeded_db):
+    """Old records without position_id should still work via FIFO."""
+    from claude_invest.modules.learner import _match_trades
+    matched = _match_trades(seeded_db)
+    closed = [m for m in matched if m["status"] == "closed"]
+    assert len(closed) >= 2

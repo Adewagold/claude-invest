@@ -43,13 +43,50 @@ def parse_signal_combo(snapshot: dict) -> str:
 
 
 def _match_trades(db: Database) -> list[dict]:
-    trades = db.get_trades(limit=500)
-    decisions = db.get_decisions(limit=500)
-
-    buy_decisions = [d for d in decisions if d["action"] == "buy"]
-    sell_decisions = [d for d in decisions if d["action"] == "sell"]
-
     matched = []
+    seen_position_ids: set[str] = set()
+
+    # Primary path: position_id-based matching via JOIN
+    for row in db.get_matched_trades():
+        position_id = row["position_id"]
+        seen_position_ids.add(position_id)
+
+        try:
+            entry_signals = json.loads(row.get("entry_signals") or "{}")
+        except (json.JSONDecodeError, TypeError):
+            entry_signals = {}
+
+        try:
+            exit_signals = json.loads(row.get("exit_signals") or "{}")
+        except (json.JSONDecodeError, TypeError):
+            exit_signals = {}
+
+        entry_price = row.get("entry_price") or entry_signals.get("price", 0)
+        exit_price = row.get("exit_price") or exit_signals.get("price", 0)
+        pnl = exit_price - entry_price if entry_price > 0 else 0
+
+        matched.append({
+            "position_id": position_id,
+            "ticker": row["ticker"],
+            "entry_time": row.get("entry_time"),
+            "exit_time": row.get("exit_time"),
+            "entry_price": entry_price,
+            "exit_price": exit_price,
+            "pnl": pnl,
+            "win": pnl > 0,
+            "status": "closed",
+            "signal_combo": parse_signal_combo(entry_signals),
+            "entry_signals": entry_signals,
+            "exit_signals": exit_signals,
+            "strategy_id": row.get("strategy_id"),
+            "reasoning": row.get("entry_reasoning", ""),
+        })
+
+    # Fallback: FIFO matching for decisions without position_id
+    decisions = db.get_decisions(limit=500)
+    buy_decisions = [d for d in decisions if d["action"] == "buy" and not d.get("position_id")]
+    sell_decisions = [d for d in decisions if d["action"] == "sell" and not d.get("position_id")]
+
     for buy in buy_decisions:
         ticker = buy["ticker"]
         buy_time = buy["timestamp"]
@@ -61,7 +98,7 @@ def _match_trades(db: Database) -> list[dict]:
                 break
 
         try:
-            entry_signals = json.loads(buy.get("signals_snapshot", "{}"))
+            entry_signals = json.loads(buy.get("signals_snapshot") or "{}")
         except (json.JSONDecodeError, TypeError):
             entry_signals = {}
 
@@ -69,20 +106,23 @@ def _match_trades(db: Database) -> list[dict]:
 
         if sell:
             try:
-                exit_signals = json.loads(sell.get("signals_snapshot", "{}"))
+                exit_signals = json.loads(sell.get("signals_snapshot") or "{}")
             except (json.JSONDecodeError, TypeError):
                 exit_signals = {}
             exit_price = exit_signals.get("price", 0)
             pnl = exit_price - entry_price if entry_price > 0 else 0
             status = "closed"
         else:
+            exit_signals = {}
             exit_price = 0
             pnl = 0
             status = "open"
 
         matched.append({
+            "position_id": None,
             "ticker": ticker,
             "entry_time": buy_time,
+            "exit_time": sell["timestamp"] if sell else None,
             "entry_price": entry_price,
             "exit_price": exit_price,
             "pnl": pnl,
@@ -90,6 +130,8 @@ def _match_trades(db: Database) -> list[dict]:
             "status": status,
             "signal_combo": parse_signal_combo(entry_signals),
             "entry_signals": entry_signals,
+            "exit_signals": exit_signals,
+            "strategy_id": entry_signals.get("strategy_id"),
             "reasoning": buy.get("reasoning", ""),
         })
 
