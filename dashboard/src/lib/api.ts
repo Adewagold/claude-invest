@@ -8,6 +8,9 @@ import type {
   Portfolio,
   Stats,
   Config,
+  LearningReport,
+  ChangeLogEntry,
+  PerformanceSeries,
 } from "./types";
 
 const API_BASE = "http://localhost:8000";
@@ -87,4 +90,26 @@ export function useAllocation() {
 
 export function useStrategyBrief() {
   return useSWR<{ brief: string }>("/api/strategy-brief", fetcher, { refreshInterval: 60000 });
+}
+
+export function useLearningReport() {
+  return useSWR<LearningReport>("/api/learning/report", fetcher, {
+    refreshInterval: 60000,
+  });
+}
+
+export function useChangeLog() {
+  return useSWR<{ changes: ChangeLogEntry[] }>("/api/learning/changes", fetcher, {
+    refreshInterval: 30000,
+  });
+}
+
+export function usePerformanceSeries() {
+  return useSWR<{ series: PerformanceSeries[] }>("/api/learning/performance", fetcher, {
+    refreshInterval: 60000,
+  });
+}
+
+export async function revertChange(changeId: number): Promise<void> {
+  await fetch(`${API_BASE}/api/learning/revert/${changeId}`, { method: "POST" });
 }

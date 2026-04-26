@@ -99,3 +99,59 @@ export interface Config {
   };
   trading_style: string;
 }
+
+export interface LearningReport {
+  generated_at: string;
+  total_trades: number;
+  overall_win_rate: number;
+  signal_combos: DimensionBucket[];
+  time_of_day: DimensionBucket[];
+  hold_duration: DimensionBucket[];
+  market_regime: DimensionBucket[];
+  asset_class: AssetClassBucket[];
+  cross_dimensional: CrossDimensional[];
+}
+
+export interface DimensionBucket {
+  wins: number;
+  losses: number;
+  total: number;
+  win_rate: number;
+  avg_pnl: number;
+  confidence: string;
+  bucket?: string;
+  combo?: string;
+  regime?: string;
+}
+
+export interface AssetClassBucket extends DimensionBucket {
+  asset_class: string;
+  strategy_id: string;
+}
+
+export interface CrossDimensional extends DimensionBucket {
+  insight: string;
+  actionable: boolean;
+}
+
+export interface ChangeLogEntry {
+  id: number;
+  timestamp: string;
+  parameter_path: string;
+  old_value: string;
+  new_value: string;
+  reason: string;
+  trade_count: number;
+  auto_applied: boolean;
+  reverted: boolean;
+  reverted_at: string | null;
+  revert_reason: string | null;
+}
+
+export interface PerformanceSeries {
+  date: string;
+  wins: number;
+  losses: number;
+  pnl: number;
+  win_rate: number;
+}

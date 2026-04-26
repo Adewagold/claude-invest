@@ -10,6 +10,7 @@ const links = [
   { href: "/signals", label: "Signals", icon: "📡" },
   { href: "/discovery", label: "Discovery", icon: "🔍" },
   { href: "/lessons", label: "Lessons", icon: "🧠" },
+  { href: "/learning", label: "Learning", icon: "📈" },
   { href: "/watchlist", label: "Watchlist", icon: "👁" },
   { href: "/strategies", label: "Strategies", icon: "🎯" },
   { href: "/config", label: "Config", icon: "⚙️" },
