@@ -89,9 +89,12 @@ def _asset_class(ticker: str) -> str:
 
 
 def _parse_dt(s: str) -> datetime:
-    # Handle both 'Z' suffix and naive ISO strings
+    # Handle both 'Z' suffix and naive ISO strings (T-separated or space-separated)
     s = s.rstrip("Z")
-    for fmt in ("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
+    for fmt in (
+        "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M",
+        "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
+    ):
         try:
             return datetime.strptime(s, fmt)
         except ValueError:
