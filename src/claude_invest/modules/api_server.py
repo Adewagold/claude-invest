@@ -141,6 +141,60 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
         db.close()
         return {"strategies": results}
 
+    @app.get("/api/learning/report")
+    def api_learning_report():
+        db = get_db()
+        from claude_invest.modules.learner import _match_trades
+        from claude_invest.modules.pattern_analyzer import analyze_patterns
+        matched = _match_trades(db)
+        closed = [m for m in matched if m["status"] == "closed"]
+        report = analyze_patterns(closed)
+        db.close()
+        return report
+
+    @app.get("/api/learning/changes")
+    def api_learning_changes():
+        db = get_db()
+        changes = db.get_change_log()
+        db.close()
+        return {"changes": changes}
+
+    @app.get("/api/learning/performance")
+    def api_learning_performance():
+        db = get_db()
+        from claude_invest.modules.learner import _match_trades
+        from collections import defaultdict
+        matched = _match_trades(db)
+        closed = [m for m in matched if m["status"] == "closed"]
+        daily = defaultdict(lambda: {"wins": 0, "losses": 0, "pnl": 0.0})
+        for t in closed:
+            date = (t.get("entry_time") or "")[:10]
+            if t["win"]:
+                daily[date]["wins"] += 1
+            else:
+                daily[date]["losses"] += 1
+            daily[date]["pnl"] += t["pnl"]
+        series = [
+            {"date": d, "wins": v["wins"], "losses": v["losses"],
+             "pnl": round(v["pnl"], 2),
+             "win_rate": round(v["wins"] / (v["wins"] + v["losses"]), 4) if (v["wins"] + v["losses"]) > 0 else 0}
+            for d, v in sorted(daily.items())
+        ]
+        db.close()
+        return {"series": series}
+
+    @app.post("/api/learning/revert/{change_id}")
+    def api_revert_change(change_id: int):
+        db = get_db()
+        changes = db.get_change_log()
+        change = next((c for c in changes if c["id"] == change_id), None)
+        if not change:
+            db.close()
+            return {"error": f"Change {change_id} not found"}
+        db.revert_change(change_id, "Manual revert via dashboard")
+        db.close()
+        return {"status": "reverted", "change_id": change_id}
+
     return app
 
 
