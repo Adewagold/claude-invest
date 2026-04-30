@@ -24,6 +24,10 @@ discovery:
 
 trading_style: mixed
 
+capital_split:
+  trading: 0.50
+  core: 0.50
+
 portfolio:
   allocation:
     safe: 0.30
@@ -115,3 +119,32 @@ strategies:
       stop_loss_pct: 0.05
       take_profit_pct: 0.10
     best_for: "breakouts, discovery scanner"
+
+core_holdings:
+  enabled: true
+  max_positions: 15
+  buy_list:
+    - {symbol: NVDA, sector: tech, weight: 0.10}
+    - {symbol: MSFT, sector: tech, weight: 0.10}
+    - {symbol: GOOGL, sector: tech, weight: 0.10}
+    - {symbol: AAPL, sector: tech, weight: 0.10}
+    - {symbol: AMZN, sector: tech, weight: 0.10}
+    - {symbol: META, sector: tech, weight: 0.10}
+    - {symbol: AMD, sector: semiconductors, weight: 0.10}
+    - {symbol: JPM, sector: finance, weight: 0.10}
+    - {symbol: JNJ, sector: healthcare, weight: 0.10}
+    - {symbol: SPY, sector: etf, weight: 0.10}
+  entry:
+    mode: dca_on_dip
+    sma_period: 50
+    dca_interval_days: 7
+    max_per_buy: 0.02
+  exit:
+    sell_on_signals: false
+    sell_on_removal: true
+    sentiment_exit_threshold: -0.3
+    sentiment_exit_days: 5
+    max_position_pct: 0.20
+  rebalance:
+    interval_days: 90
+    drift_threshold: 0.05
