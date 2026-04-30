@@ -335,6 +335,104 @@ def cmd_strategies():
     })
 
 
+def cmd_core_status():
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.modules.core_engine import get_core_status
+    from claude_invest.modules.portfolio import get_portfolio
+    portfolio = get_portfolio()
+    status = get_core_status(config, db, portfolio)
+    db.close()
+    _output(status)
+
+
+def cmd_core_cycle():
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.modules.core_engine import run_core_cycle
+    result = run_core_cycle(config, db)
+    db.close()
+    _output(result)
+
+
+def cmd_core_buy(symbol: str):
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.modules.core_engine import run_core_cycle
+    # Override: force buy this symbol by running cycle with just this stock
+    from claude_invest.modules.technicals import analyze_technicals
+    from claude_invest.modules.executor import execute_order
+    from claude_invest.modules.risk_manager import RiskManager
+    risk_mgr = RiskManager(config, db)
+    qty = risk_mgr.calculate_core_position_size(
+        analyze_technicals(symbol)["current_price"], config)
+    if qty > 0:
+        result = execute_order(symbol=symbol, side="buy", qty=qty)
+        if result.get("status") != "error":
+            db.insert_core_buy({
+                "symbol": symbol, "qty": qty,
+                "price": result.get("filled_price") or analyze_technicals(symbol)["current_price"],
+                "cost_basis": qty * (result.get("filled_price") or 0),
+                "order_id": result.get("order_id"),
+            })
+        _output(result)
+    else:
+        _output({"error": "Position size too small"})
+    db.close()
+
+
+def cmd_core_add(symbol: str, sector: str, weight: float):
+    from ruamel.yaml import YAML
+    from claude_invest.config.loader import DEFAULT_CONFIG_PATH
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    with open(DEFAULT_CONFIG_PATH) as f:
+        config = yaml.load(f)
+    buy_list = config.get("core_holdings", {}).get("buy_list", [])
+    # Check if already exists
+    if any(item["symbol"] == symbol for item in buy_list):
+        _output({"error": f"{symbol} already in buy list"})
+        return
+    buy_list.append({"symbol": symbol, "sector": sector, "weight": weight})
+    config["core_holdings"]["buy_list"] = buy_list
+    with open(DEFAULT_CONFIG_PATH, "w") as f:
+        yaml.dump(config, f)
+    _output({"status": "added", "symbol": symbol, "sector": sector, "weight": weight})
+
+
+def cmd_core_remove(symbol: str):
+    from ruamel.yaml import YAML
+    from claude_invest.config.loader import DEFAULT_CONFIG_PATH
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    with open(DEFAULT_CONFIG_PATH) as f:
+        config = yaml.load(f)
+    buy_list = config.get("core_holdings", {}).get("buy_list", [])
+    new_list = [item for item in buy_list if item["symbol"] != symbol]
+    if len(new_list) == len(buy_list):
+        _output({"error": f"{symbol} not found in buy list"})
+        return
+    config["core_holdings"]["buy_list"] = new_list
+    with open(DEFAULT_CONFIG_PATH, "w") as f:
+        yaml.dump(config, f)
+    _output({"status": "removed", "symbol": symbol, "note": "Will be sold on next core cycle"})
+
+
+def cmd_core_rebalance():
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.modules.core_engine import rebalance_core
+    from claude_invest.modules.portfolio import get_portfolio
+    portfolio = get_portfolio()
+    result = rebalance_core(config, db, portfolio)
+    db.close()
+    _output({"rebalanced": result})
+
+
 def main():
     if len(sys.argv) < 2:
         _output({"error": "Usage: claude-invest <command> [args]", "commands": [
@@ -344,6 +442,8 @@ def main():
             "watchlist", "watchlist-add <symbol> [note]", "watchlist-remove <symbol>",
             "strategies",
             "learning-report", "change-log", "revert-change <change_id>",
+            "core-status", "core-cycle", "core-buy <symbol>",
+            "core-add <symbol> <sector> <weight>", "core-remove <symbol>", "core-rebalance",
         ]})
         sys.exit(1)
 
@@ -382,6 +482,18 @@ def main():
         cmd_change_log()
     elif command == "revert-change" and len(sys.argv) >= 3:
         cmd_revert_change(int(sys.argv[2]))
+    elif command == "core-status":
+        cmd_core_status()
+    elif command == "core-cycle":
+        cmd_core_cycle()
+    elif command == "core-buy" and len(sys.argv) >= 3:
+        cmd_core_buy(sys.argv[2])
+    elif command == "core-add" and len(sys.argv) >= 5:
+        cmd_core_add(sys.argv[2], sys.argv[3], float(sys.argv[4]))
+    elif command == "core-remove" and len(sys.argv) >= 3:
+        cmd_core_remove(sys.argv[2])
+    elif command == "core-rebalance":
+        cmd_core_rebalance()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
