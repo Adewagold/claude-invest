@@ -11,6 +11,9 @@ import type {
   LearningReport,
   ChangeLogEntry,
   PerformanceSeries,
+  CoreStatus,
+  CoreScheduleEntry,
+  RebalancePreviewItem,
 } from "./types";
 
 const API_BASE = "http://localhost:8000";
@@ -112,4 +115,22 @@ export function usePerformanceSeries() {
 
 export async function revertChange(changeId: number): Promise<void> {
   await fetch(`${API_BASE}/api/learning/revert/${changeId}`, { method: "POST" });
+}
+
+export function useCoreStatus() {
+  return useSWR<CoreStatus>("/api/core/status", fetcher, {
+    refreshInterval: 30000,
+  });
+}
+
+export function useCoreSchedule() {
+  return useSWR<{ schedule: CoreScheduleEntry[] }>("/api/core/schedule", fetcher, {
+    refreshInterval: 60000,
+  });
+}
+
+export function useRebalancePreview() {
+  return useSWR<{ preview: RebalancePreviewItem[] }>("/api/core/rebalance-preview", fetcher, {
+    refreshInterval: 60000,
+  });
 }

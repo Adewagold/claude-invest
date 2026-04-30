@@ -155,3 +155,44 @@ export interface PerformanceSeries {
   pnl: number;
   win_rate: number;
 }
+
+export interface CoreHolding {
+  symbol: string;
+  sector: string;
+  qty: number;
+  cost_basis: number;
+  current_value: number;
+  unrealized_pnl: number;
+  weight_actual: number;
+  weight_target: number;
+  drift: number;
+  last_buy_date: string | null;
+}
+
+export interface CoreStatus {
+  core_capital: number;
+  invested: number;
+  cash_remaining: number;
+  holdings: CoreHolding[];
+  next_rebalance_date: string | null;
+  days_until_rebalance: number | null;
+}
+
+export interface CoreScheduleEntry {
+  symbol: string;
+  sector: string;
+  weight: number;
+  last_buy_date: string | null;
+  days_since_buy: number | null;
+  next_buy_date: string;
+  due: boolean;
+}
+
+export interface RebalancePreviewItem {
+  symbol: string;
+  action: string;
+  qty: number;
+  reason: string;
+  old_weight: number;
+  new_weight: number;
+}

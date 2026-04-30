@@ -13,6 +13,7 @@ const links = [
   { href: "/learning", label: "Learning", icon: "📈" },
   { href: "/watchlist", label: "Watchlist", icon: "👁" },
   { href: "/strategies", label: "Strategies", icon: "🎯" },
+  { href: "/core", label: "Core Holdings", icon: "🏦" },
   { href: "/config", label: "Config", icon: "⚙️" },
 ];
 
