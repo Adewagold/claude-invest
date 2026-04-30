@@ -77,7 +77,7 @@ def cmd_analyze(ticker: str):
     })
 
 
-def cmd_risk_check(ticker: str, qty: int, price: float):
+def cmd_risk_check(ticker: str, qty: float, price: float):
     config = load_config()
     db = Database(DB_PATH)
     db.initialize()
@@ -456,7 +456,7 @@ def main():
     elif command == "analyze" and len(sys.argv) >= 3:
         cmd_analyze(sys.argv[2])
     elif command == "risk-check" and len(sys.argv) >= 5:
-        cmd_risk_check(sys.argv[2], int(sys.argv[3]), float(sys.argv[4]))
+        cmd_risk_check(sys.argv[2], float(sys.argv[3]), float(sys.argv[4]))
     elif command == "execute" and len(sys.argv) >= 5:
         cmd_execute(sys.argv[2], sys.argv[3], float(sys.argv[4]))
     elif command == "log-decision" and len(sys.argv) >= 3:
