@@ -21,9 +21,14 @@ def get_active_strategies(config: dict) -> list[dict]:
 def get_strategy_capital(config: dict, strategy_id: str) -> float:
     """Calculate capital allocated to a strategy."""
     total_capital = config.get("capital", 5000)
+    capital_split = config.get("capital_split")
+    if capital_split:
+        trading_capital = total_capital * capital_split.get("trading", 1.0)
+    else:
+        trading_capital = total_capital
     strategies_config = config.get("strategies", {})
     strat = strategies_config.get(strategy_id, {})
-    return total_capital * strat.get("capital_pct", 0.33)
+    return trading_capital * strat.get("capital_pct", 0.33)
 
 
 def tag_trade(db: Database, trade_data: dict, strategy_id: str):
