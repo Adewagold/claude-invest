@@ -11,7 +11,7 @@ def db(tmp_db_path):
 
 def test_initialize_creates_tables(db):
     tables = db.list_tables()
-    expected = {"trades", "positions", "signals", "decisions", "portfolio_snapshots", "discovery_log", "pdt_tracker", "change_log"}
+    expected = {"trades", "positions", "signals", "decisions", "portfolio_snapshots", "discovery_log", "pdt_tracker", "change_log", "core_buys", "rebalance_log"}
     assert expected == set(tables)
 
 
@@ -229,4 +229,64 @@ def test_get_matched_trades_by_position_id(tmp_db_path):
     assert matched[0]["position_id"] == "pos-1"
     assert matched[0]["entry_price"] == 75000
     assert matched[0]["exit_price"] == 76000
+    db.close()
+
+
+def test_core_buys_table_exists(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    tables = db.list_tables()
+    assert "core_buys" in tables
+    db.close()
+
+def test_insert_and_get_core_buy(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.insert_core_buy({
+        "symbol": "NVDA", "qty": 0.5, "price": 500.0,
+        "cost_basis": 250.0, "position_id": "core-1", "order_id": "o1",
+    })
+    buys = db.get_core_buys()
+    assert len(buys) == 1
+    assert buys[0]["symbol"] == "NVDA"
+    assert buys[0]["cost_basis"] == 250.0
+    db.close()
+
+def test_get_core_buys_by_symbol(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.insert_core_buy({"symbol": "NVDA", "qty": 0.5, "price": 500, "cost_basis": 250, "position_id": "c1", "order_id": "o1"})
+    db.insert_core_buy({"symbol": "MSFT", "qty": 1.0, "price": 400, "cost_basis": 400, "position_id": "c2", "order_id": "o2"})
+    nvda_buys = db.get_core_buys(symbol="NVDA")
+    assert len(nvda_buys) == 1
+    assert nvda_buys[0]["symbol"] == "NVDA"
+    db.close()
+
+def test_get_last_core_buy_date(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    assert db.get_last_core_buy_date("NVDA") is None
+    db.insert_core_buy({"symbol": "NVDA", "qty": 0.5, "price": 500, "cost_basis": 250, "position_id": "c1", "order_id": "o1"})
+    last = db.get_last_core_buy_date("NVDA")
+    assert last is not None
+    db.close()
+
+def test_rebalance_log_table_exists(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    tables = db.list_tables()
+    assert "rebalance_log" in tables
+    db.close()
+
+def test_insert_and_get_rebalance_log(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.insert_rebalance_log({
+        "symbol": "NVDA", "action": "sell", "qty": 0.1, "price": 550.0,
+        "reason": "overweight", "old_weight": 0.15, "new_weight": 0.10,
+    })
+    logs = db.get_rebalance_log()
+    assert len(logs) == 1
+    assert logs[0]["symbol"] == "NVDA"
+    assert logs[0]["reason"] == "overweight"
     db.close()

@@ -98,6 +98,29 @@ class Database:
                 reverted_at TEXT,
                 revert_reason TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS core_buys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+                symbol TEXT NOT NULL,
+                qty REAL NOT NULL,
+                price REAL NOT NULL,
+                cost_basis REAL NOT NULL,
+                position_id TEXT,
+                order_id TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS rebalance_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+                symbol TEXT NOT NULL,
+                action TEXT NOT NULL,
+                qty REAL NOT NULL,
+                price REAL NOT NULL,
+                reason TEXT NOT NULL,
+                old_weight REAL,
+                new_weight REAL
+            );
         """)
         for table in ("decisions", "trades"):
             cursor = conn.execute(f"PRAGMA table_info({table})")
@@ -272,6 +295,53 @@ class Database:
               AND bt.price IS NOT NULL AND st.price IS NOT NULL
             ORDER BY b.timestamp DESC
         """)
+        return [dict(row) for row in cursor.fetchall()]
+
+    def insert_core_buy(self, entry: dict):
+        conn = self._get_conn()
+        conn.execute(
+            "INSERT INTO core_buys (symbol, qty, price, cost_basis, position_id, order_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (entry["symbol"], entry["qty"], entry["price"], entry["cost_basis"],
+             entry.get("position_id"), entry.get("order_id")),
+        )
+        conn.commit()
+
+    def get_core_buys(self, symbol: str | None = None, limit: int = 100) -> list[dict]:
+        conn = self._get_conn()
+        if symbol:
+            cursor = conn.execute(
+                "SELECT * FROM core_buys WHERE symbol = ? ORDER BY timestamp DESC LIMIT ?",
+                (symbol, limit),
+            )
+        else:
+            cursor = conn.execute(
+                "SELECT * FROM core_buys ORDER BY timestamp DESC LIMIT ?", (limit,)
+            )
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_last_core_buy_date(self, symbol: str) -> str | None:
+        conn = self._get_conn()
+        cursor = conn.execute(
+            "SELECT timestamp FROM core_buys WHERE symbol = ? ORDER BY timestamp DESC LIMIT 1",
+            (symbol,),
+        )
+        row = cursor.fetchone()
+        return row["timestamp"] if row else None
+
+    def insert_rebalance_log(self, entry: dict):
+        conn = self._get_conn()
+        conn.execute(
+            "INSERT INTO rebalance_log (symbol, action, qty, price, reason, old_weight, new_weight) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (entry["symbol"], entry["action"], entry["qty"], entry["price"],
+             entry["reason"], entry.get("old_weight"), entry.get("new_weight")),
+        )
+        conn.commit()
+
+    def get_rebalance_log(self, limit: int = 50) -> list[dict]:
+        conn = self._get_conn()
+        cursor = conn.execute(
+            "SELECT * FROM rebalance_log ORDER BY timestamp DESC LIMIT ?", (limit,)
+        )
         return [dict(row) for row in cursor.fetchall()]
 
     def close(self):
