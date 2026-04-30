@@ -195,6 +195,59 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
         db.close()
         return {"status": "reverted", "change_id": change_id}
 
+    @app.get("/api/core/status")
+    def api_core_status():
+        config = load_config()
+        db = get_db()
+        from claude_invest.modules.core_engine import get_core_status
+        portfolio_data = get_portfolio()
+        status = get_core_status(config, db, portfolio_data)
+        db.close()
+        return status
+
+    @app.get("/api/core/schedule")
+    def api_core_schedule():
+        config = load_config()
+        db = get_db()
+        core_config = config.get("core_holdings", {})
+        buy_list = core_config.get("buy_list", [])
+        dca_interval = core_config.get("entry", {}).get("dca_interval_days", 7)
+        schedule = []
+        for item in buy_list:
+            symbol = item["symbol"]
+            last_buy = db.get_last_core_buy_date(symbol)
+            if last_buy:
+                from datetime import datetime, timedelta
+                last_dt = datetime.fromisoformat(last_buy)
+                next_buy = last_dt + timedelta(days=dca_interval)
+                days_since = (datetime.utcnow() - last_dt).days
+                due = days_since >= dca_interval
+            else:
+                next_buy = None
+                days_since = None
+                due = True
+            schedule.append({
+                "symbol": symbol,
+                "sector": item.get("sector"),
+                "weight": item.get("weight"),
+                "last_buy_date": last_buy,
+                "days_since_buy": days_since,
+                "next_buy_date": next_buy.isoformat() if next_buy else "ASAP",
+                "due": due,
+            })
+        db.close()
+        return {"schedule": schedule}
+
+    @app.get("/api/core/rebalance-preview")
+    def api_core_rebalance_preview():
+        config = load_config()
+        db = get_db()
+        from claude_invest.modules.core_engine import rebalance_core
+        portfolio_data = get_portfolio()
+        preview = rebalance_core(config, db, portfolio_data, dry_run=True)
+        db.close()
+        return {"preview": preview}
+
     return app
 
 
