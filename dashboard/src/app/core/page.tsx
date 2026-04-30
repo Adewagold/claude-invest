@@ -33,8 +33,8 @@ export default function CorePage() {
         />
         <StatCard
           label="Invested"
-          value={status ? `$${status.invested.toFixed(2)}` : "—"}
-          sub={status ? `${((status.invested / status.core_capital) * 100).toFixed(0)}% deployed` : undefined}
+          value={status ? `$${(status.core_capital - (status.cash_remaining ?? 0)).toFixed(2)}` : "—"}
+          sub={status ? `${(((status.core_capital - (status.cash_remaining ?? 0)) / status.core_capital) * 100).toFixed(0)}% deployed` : undefined}
         />
         <StatCard
           label="Cash Remaining"
@@ -65,17 +65,18 @@ export default function CorePage() {
               {holdings.map((h) => {
                 const driftColor = Math.abs(h.drift) > 0.10 ? "text-red-400"
                   : Math.abs(h.drift) > 0.05 ? "text-yellow-400" : "text-zinc-400";
-                const pnlColor = h.unrealized_pnl >= 0 ? "text-emerald-400" : "text-red-400";
+                const pnl = h.current_value - (h.cost_basis ?? 0);
+                const pnlColor = pnl >= 0 ? "text-emerald-400" : "text-red-400";
                 return (
                   <tr key={h.symbol} className="border-t border-zinc-800">
                     <td className="py-2 font-mono text-zinc-200">{h.symbol}</td>
                     <td className="text-zinc-400">{h.sector}</td>
-                    <td className="text-right text-zinc-300">${h.cost_basis.toFixed(2)}</td>
+                    <td className="text-right text-zinc-300">${(h.cost_basis ?? 0).toFixed(2)}</td>
                     <td className="text-right text-zinc-300">${h.current_value.toFixed(2)}</td>
-                    <td className={`text-right ${pnlColor}`}>${h.unrealized_pnl.toFixed(2)}</td>
-                    <td className="text-right text-zinc-300">{(h.weight_actual * 100).toFixed(1)}%</td>
-                    <td className="text-right text-zinc-500">{(h.weight_target * 100).toFixed(1)}%</td>
-                    <td className={`text-right ${driftColor}`}>{(h.drift * 100).toFixed(1)}%</td>
+                    <td className={`text-right ${pnlColor}`}>${pnl.toFixed(2)}</td>
+                    <td className="text-right text-zinc-300">{((h.weight ?? 0) * 100).toFixed(1)}%</td>
+                    <td className="text-right text-zinc-500">{((h.target_weight ?? 0) * 100).toFixed(1)}%</td>
+                    <td className={`text-right ${driftColor}`}>{((h.drift ?? 0) * 100).toFixed(1)}%</td>
                   </tr>
                 );
               })}

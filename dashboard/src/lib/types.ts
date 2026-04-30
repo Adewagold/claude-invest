@@ -162,20 +162,16 @@ export interface CoreHolding {
   qty: number;
   cost_basis: number;
   current_value: number;
-  unrealized_pnl: number;
-  weight_actual: number;
-  weight_target: number;
+  weight: number;
+  target_weight: number;
   drift: number;
-  last_buy_date: string | null;
 }
 
 export interface CoreStatus {
   core_capital: number;
-  invested: number;
   cash_remaining: number;
   holdings: CoreHolding[];
   next_rebalance_date: string | null;
-  days_until_rebalance: number | null;
 }
 
 export interface CoreScheduleEntry {
