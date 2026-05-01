@@ -78,7 +78,7 @@ strategies:
     name: "RSI(2) Mean Reversion"
     description: "Buy oversold bounces, sell overbought. 73% win rate backtested."
     enabled: true
-    capital_pct: 0.33
+    capital_pct: 0.25
     params:
       rsi_period: 2
       rsi_buy_threshold: 25
@@ -93,7 +93,7 @@ strategies:
     name: "MACD 5/35/5 Trend"
     description: "Buy dips in uptrends with custom MACD. 65-73% in trends."
     enabled: true
-    capital_pct: 0.34
+    capital_pct: 0.25
     params:
       macd_fast: 5
       macd_slow: 35
@@ -110,7 +110,7 @@ strategies:
     name: "Momentum Breakout"
     description: "Current strategy - MACD crossover + RSI sweet spot."
     enabled: true
-    capital_pct: 0.33
+    capital_pct: 0.25
     params:
       rsi_period: 14
       rsi_entry_min: 30
@@ -148,3 +148,37 @@ core_holdings:
   rebalance:
     interval_days: 90
     drift_threshold: 0.05
+
+volatility_scalper:
+  name: "Volatility Scalper"
+  enabled: true
+  capital_pct: 0.25
+  modes:
+    dip_buying: true
+    rally_shorting: false
+    news_reaction: true
+  watchlist:
+    - OKLO
+    - RIVN
+    - PLTR
+    - IONQ
+    - MARA
+  discovery:
+    enabled: true
+    min_atr_pct: 0.04
+    lookback_days: 20
+  params:
+    bar_timeframe: "15Min"
+    dip_threshold: -0.05
+    rally_threshold: 0.05
+    rsi_period: 14
+    rsi_oversold: 30
+    rsi_overbought: 75
+    news_sentiment_buy: -0.3
+    news_sentiment_short: 0.4
+    news_min_articles: 3
+    take_profit_pct: 0.03
+    stop_loss_pct: 0.03
+    max_hold_minutes: 120
+    force_exit_time: "15:55"
+    max_concurrent: 2
