@@ -248,6 +248,21 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
         db.close()
         return {"preview": preview}
 
+    @app.get("/api/scalp/candidates")
+    def api_scalp_candidates():
+        config = load_config()
+        from claude_invest.modules.volatility_scanner import scan_volatile_stocks
+        candidates = scan_volatile_stocks(config)
+        return {"candidates": candidates}
+
+    @app.get("/api/scalp/status")
+    def api_scalp_status():
+        portfolio_data = get_portfolio()
+        config = load_config()
+        watchlist = config.get("volatility_scalper", {}).get("watchlist", [])
+        scalp_positions = [p for p in portfolio_data.get("positions", []) if p.get("symbol") in watchlist]
+        return {"scalp_positions": scalp_positions}
+
     return app
 
 

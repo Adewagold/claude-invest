@@ -433,6 +433,36 @@ def cmd_core_rebalance():
     _output({"rebalanced": result})
 
 
+def cmd_scalp_cycle():
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.modules.scalp_engine import run_scalp_cycle
+    result = run_scalp_cycle(config, db)
+    db.close()
+    _output(result)
+
+
+def cmd_scalp_scan():
+    config = load_config()
+    from claude_invest.modules.volatility_scanner import scan_volatile_stocks
+    candidates = scan_volatile_stocks(config)
+    _output({"candidates": candidates, "count": len(candidates)})
+
+
+def cmd_scalp_status():
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    from claude_invest.modules.scalp_engine import check_scalp_exits
+    from claude_invest.modules.portfolio import get_portfolio
+    portfolio = get_portfolio()
+    # Get scalp positions (filter by strategy)
+    scalp_positions = [p for p in portfolio.get("positions", []) if p.get("symbol") in config.get("volatility_scalper", {}).get("watchlist", [])]
+    db.close()
+    _output({"scalp_positions": scalp_positions, "count": len(scalp_positions)})
+
+
 def main():
     if len(sys.argv) < 2:
         _output({"error": "Usage: claude-invest <command> [args]", "commands": [
@@ -444,6 +474,7 @@ def main():
             "learning-report", "change-log", "revert-change <change_id>",
             "core-status", "core-cycle", "core-buy <symbol>",
             "core-add <symbol> <sector> <weight>", "core-remove <symbol>", "core-rebalance",
+            "scalp-cycle", "scalp-scan", "scalp-status",
         ]})
         sys.exit(1)
 
@@ -494,6 +525,12 @@ def main():
         cmd_core_remove(sys.argv[2])
     elif command == "core-rebalance":
         cmd_core_rebalance()
+    elif command == "scalp-cycle":
+        cmd_scalp_cycle()
+    elif command == "scalp-scan":
+        cmd_scalp_scan()
+    elif command == "scalp-status":
+        cmd_scalp_status()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
