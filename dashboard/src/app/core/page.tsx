@@ -123,8 +123,8 @@ export default function CorePage() {
             {preview.map((p, i) => (
               <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded">
                 <div className="flex items-center gap-3">
-                  <span className={`text-xs font-medium ${p.action === "buy" ? "text-emerald-400" : "text-red-400"}`}>
-                    {p.action.toUpperCase()}
+                  <span className={`text-xs font-medium ${(p.action ?? p.side) === "buy" ? "text-emerald-400" : "text-red-400"}`}>
+                    {(p.action ?? p.side ?? "unknown").toUpperCase()}
                   </span>
                   <span className="font-mono text-zinc-200">{p.symbol}</span>
                 </div>
