@@ -4,28 +4,37 @@ import pandas as pd
 import ta
 from alpaca.data.historical import StockHistoricalDataClient, CryptoHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest, CryptoBarsRequest
-from alpaca.data.timeframe import TimeFrame
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
 
+_TIMEFRAME_MAP = {
+    "1Hour": TimeFrame.Hour,
+    "1Day": TimeFrame.Day,
+    "15Min": TimeFrame(15, TimeFrameUnit.Minute),
+    "5Min": TimeFrame(5, TimeFrameUnit.Minute),
+    "1Min": TimeFrame.Minute,
+}
 
-def _get_bars(ticker: str, days: int = 60) -> pd.DataFrame:
+
+def _get_bars(ticker: str, days: int = 60, timeframe: str = "1Hour") -> pd.DataFrame:
     api_key = os.environ["ALPACA_API_KEY"]
     secret_key = os.environ["ALPACA_SECRET_KEY"]
     start = datetime.now(timezone.utc) - timedelta(days=days)
+    tf = _TIMEFRAME_MAP.get(timeframe, TimeFrame.Hour)
 
     if "/" in ticker:
         client = CryptoHistoricalDataClient(api_key, secret_key)
         request = CryptoBarsRequest(
-            symbol_or_symbols=ticker, timeframe=TimeFrame.Hour, start=start
+            symbol_or_symbols=ticker, timeframe=tf, start=start
         )
         bars = client.get_crypto_bars(request)
     else:
         client = StockHistoricalDataClient(api_key, secret_key)
         request = StockBarsRequest(
-            symbol_or_symbols=ticker, timeframe=TimeFrame.Hour, start=start
+            symbol_or_symbols=ticker, timeframe=tf, start=start
         )
         bars = client.get_stock_bars(request)
 
@@ -71,8 +80,8 @@ def compute_indicators(df: pd.DataFrame) -> dict:
     }
 
 
-def analyze_technicals(ticker: str) -> dict:
-    df = _get_bars(ticker)
+def analyze_technicals(ticker: str, timeframe: str = "1Hour") -> dict:
+    df = _get_bars(ticker, timeframe=timeframe)
     indicators = compute_indicators(df)
     indicators["ticker"] = ticker
     return indicators

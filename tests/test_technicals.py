@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from unittest.mock import MagicMock, patch
-from claude_invest.modules.technicals import analyze_technicals, compute_indicators
+from claude_invest.modules.technicals import analyze_technicals, compute_indicators, _get_bars
 
 
 def _make_price_df(prices: list[float]) -> pd.DataFrame:
@@ -67,3 +67,51 @@ def test_analyze_technicals_returns_full_signal(mock_get_bars):
     assert "macd" in result
     assert "trend" in result
     assert "current_price" in result
+
+
+def _make_fake_df(n=60):
+    """Return a minimal OHLCV DataFrame with timestamp column."""
+    rng = pd.date_range("2026-01-01", periods=n, freq="1h")
+    data = {
+        "timestamp": rng,
+        "open": np.linspace(10, 20, n),
+        "high": np.linspace(10.5, 20.5, n),
+        "low": np.linspace(9.5, 19.5, n),
+        "close": np.linspace(10, 20, n),
+        "volume": [100_000] * n,
+    }
+    return pd.DataFrame(data)
+
+
+@patch("claude_invest.modules.technicals._get_bars")
+def test_analyze_technicals_default_timeframe(mock_get_bars):
+    mock_get_bars.return_value = _make_fake_df()
+    result = analyze_technicals("AAPL")
+    mock_get_bars.assert_called_once_with("AAPL", timeframe="1Hour")
+    assert "rsi" in result
+    assert result["ticker"] == "AAPL"
+
+
+@patch("claude_invest.modules.technicals._get_bars")
+def test_analyze_technicals_15min_timeframe(mock_get_bars):
+    mock_get_bars.return_value = _make_fake_df()
+    result = analyze_technicals("MARA", timeframe="15Min")
+    mock_get_bars.assert_called_once_with("MARA", timeframe="15Min")
+    assert result["ticker"] == "MARA"
+
+
+@patch("claude_invest.modules.technicals.StockHistoricalDataClient")
+def test_get_bars_passes_timeframe_to_alpaca(mock_client_cls):
+    """_get_bars must map timeframe string to correct Alpaca TimeFrame object."""
+    from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+    mock_client = MagicMock()
+    mock_client_cls.return_value = mock_client
+
+    fake_bars = MagicMock()
+    fake_bars.df = _make_fake_df().set_index("timestamp")
+    mock_client.get_stock_bars.return_value = fake_bars
+
+    _get_bars("MARA", timeframe="15Min")
+    call_args = mock_client.get_stock_bars.call_args
+    request = call_args[0][0]
+    assert str(request.timeframe) == "15Min"
