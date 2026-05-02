@@ -463,6 +463,26 @@ def cmd_scalp_status():
     _output({"scalp_positions": scalp_positions, "count": len(scalp_positions)})
 
 
+def cmd_trailing_status():
+    from claude_invest.modules.trailing_stop import get_all_peaks
+    from claude_invest.modules.portfolio import get_portfolio
+    portfolio = get_portfolio()
+    peaks = get_all_peaks()
+    status = []
+    for p in portfolio["positions"]:
+        symbol = p["symbol"]
+        peak = peaks.get(symbol, p["current_price"])
+        drop = (peak - p["current_price"]) / peak if peak > 0 else 0
+        status.append({
+            "symbol": symbol,
+            "current": p["current_price"],
+            "entry": p["avg_entry_price"],
+            "peak": peak,
+            "drop_from_peak": round(drop, 4),
+        })
+    _output({"trailing_stops": status})
+
+
 def main():
     if len(sys.argv) < 2:
         _output({"error": "Usage: claude-invest <command> [args]", "commands": [
@@ -475,6 +495,7 @@ def main():
             "core-status", "core-cycle", "core-buy <symbol>",
             "core-add <symbol> <sector> <weight>", "core-remove <symbol>", "core-rebalance",
             "scalp-cycle", "scalp-scan", "scalp-status",
+            "trailing-status",
         ]})
         sys.exit(1)
 
@@ -531,6 +552,8 @@ def main():
         cmd_scalp_scan()
     elif command == "scalp-status":
         cmd_scalp_status()
+    elif command == "trailing-status":
+        cmd_trailing_status()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)

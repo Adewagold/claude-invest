@@ -8,7 +8,13 @@ pdt_tracking: true
 
 exit_strategy:
   stop_loss_pct: 0.05
-  trailing_stop_pct: 0.03
+  trailing_stop_pct: 0.05
+  trailing_stop_activate_pct: 0.0  # activate after any profit (0 = immediate)
+  partial_profit_levels:
+    - profit_pct: 0.10
+      sell_pct: 0.25
+    - profit_pct: 0.20
+      sell_pct: 0.25
   signal_exit: true
 
 polling:
