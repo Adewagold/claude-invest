@@ -3,6 +3,8 @@ import os
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockSnapshotRequest, MostActivesRequest
 from alpaca.data.historical.screener import ScreenerClient
+from alpaca.data.historical.crypto import CryptoHistoricalDataClient
+from alpaca.data.requests import CryptoSnapshotRequest
 from dotenv import load_dotenv
 
 from claude_invest.modules.sentiment import analyze_sentiment
@@ -13,6 +15,11 @@ load_dotenv()
 DEFAULT_MIN_VOLUME = 2.0
 DEFAULT_MIN_NEWS = 2
 DEFAULT_MIN_SENTIMENT = 0.3
+
+CRYPTO_PAIRS = [
+    "BTC/USD", "ETH/USD", "SOL/USD", "DOGE/USD", "AVAX/USD",
+    "DOT/USD", "LINK/USD", "MATIC/USD", "ADA/USD", "XRP/USD",
+]
 
 
 def _get_most_active_tickers(top_n: int = 20) -> list[str]:
@@ -48,6 +55,24 @@ def _get_snapshot(ticker: str) -> dict:
     volume_ratio = daily_vol / prev_vol if prev_vol > 0 else 0.0
 
     return {"volume_ratio": round(volume_ratio, 2)}
+
+
+def _get_crypto_snapshot(ticker: str) -> dict:
+    api_key = os.environ["ALPACA_API_KEY"]
+    secret_key = os.environ["ALPACA_SECRET_KEY"]
+    client = CryptoHistoricalDataClient(api_key, secret_key)
+    try:
+        symbol = ticker.replace("/", "")  # BTC/USD -> BTCUSD
+        snapshot = client.get_crypto_snapshot(CryptoSnapshotRequest(symbol_or_symbols=symbol))
+        if symbol not in snapshot:
+            return {"volume_ratio": 0.0}
+        snap = snapshot[symbol]
+        daily_vol = float(snap.daily_bar.volume) if snap.daily_bar else 0
+        prev_vol = float(snap.previous_daily_bar.volume) if snap.previous_daily_bar else 1
+        volume_ratio = daily_vol / prev_vol if prev_vol > 0 else 0.0
+        return {"volume_ratio": round(volume_ratio, 2)}
+    except Exception:
+        return {"volume_ratio": 0.0}
 
 
 def score_ticker(
@@ -96,6 +121,24 @@ def scan_market(config: dict) -> list[dict]:
         )
         scored["ticker"] = ticker
         results.append(scored)
+
+    # Also scan crypto pairs
+    for ticker in CRYPTO_PAIRS:
+        try:
+            snapshot = _get_crypto_snapshot(ticker)
+            sentiment = analyze_sentiment(ticker)
+            scored = score_ticker(
+                volume_ratio=snapshot["volume_ratio"],
+                sentiment_score=sentiment["score"],
+                news_count=sentiment["article_count"],
+                min_volume=min_vol,
+                min_news=min_news,
+                min_sentiment=min_sent,
+            )
+            scored["ticker"] = ticker
+            results.append(scored)
+        except Exception:
+            continue
 
     results.sort(key=lambda x: x["combined_score"], reverse=True)
     return results
