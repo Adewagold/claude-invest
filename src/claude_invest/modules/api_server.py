@@ -133,6 +133,15 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     def api_watchlist_remove(symbol: str):
         return remove_from_watchlist(symbol)
 
+    @app.get("/api/dividends")
+    def api_dividends():
+        from claude_invest.modules.dividends import get_dividend_summary
+        db = get_db()
+        portfolio_data = get_portfolio()
+        result = get_dividend_summary(db, portfolio_data["positions"])
+        db.close()
+        return result
+
     @app.get("/api/strategies")
     def api_strategies():
         config = load_config()

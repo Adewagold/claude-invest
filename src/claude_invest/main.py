@@ -463,6 +463,17 @@ def cmd_scalp_status():
     _output({"scalp_positions": scalp_positions, "count": len(scalp_positions)})
 
 
+def cmd_dividends():
+    from claude_invest.modules.dividends import get_dividend_summary
+    from claude_invest.modules.portfolio import get_portfolio
+    db = Database(DB_PATH)
+    db.initialize()
+    portfolio = get_portfolio()
+    result = get_dividend_summary(db, portfolio["positions"])
+    db.close()
+    _output(result)
+
+
 def cmd_earnings_check():
     from claude_invest.modules.earnings import check_portfolio_earnings
     portfolio = get_portfolio()
@@ -504,6 +515,7 @@ def main():
             "scalp-cycle", "scalp-scan", "scalp-status",
             "trailing-status",
             "earnings-check",
+            "dividends",
         ]})
         sys.exit(1)
 
@@ -564,6 +576,8 @@ def main():
         cmd_trailing_status()
     elif command == "earnings-check":
         cmd_earnings_check()
+    elif command == "dividends":
+        cmd_dividends()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
