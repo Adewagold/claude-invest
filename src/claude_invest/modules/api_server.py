@@ -248,6 +248,13 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
         db.close()
         return {"preview": preview}
 
+    @app.get("/api/earnings")
+    def api_earnings():
+        from claude_invest.modules.earnings import check_portfolio_earnings
+        portfolio_data = get_portfolio()
+        results = check_portfolio_earnings(portfolio_data["positions"])
+        return {"earnings_alerts": results}
+
     @app.get("/api/scalp/candidates")
     def api_scalp_candidates():
         config = load_config()

@@ -463,6 +463,13 @@ def cmd_scalp_status():
     _output({"scalp_positions": scalp_positions, "count": len(scalp_positions)})
 
 
+def cmd_earnings_check():
+    from claude_invest.modules.earnings import check_portfolio_earnings
+    portfolio = get_portfolio()
+    results = check_portfolio_earnings(portfolio["positions"])
+    _output({"earnings_alerts": results, "count": len(results)})
+
+
 def cmd_trailing_status():
     from claude_invest.modules.trailing_stop import get_all_peaks
     from claude_invest.modules.portfolio import get_portfolio
@@ -496,6 +503,7 @@ def main():
             "core-add <symbol> <sector> <weight>", "core-remove <symbol>", "core-rebalance",
             "scalp-cycle", "scalp-scan", "scalp-status",
             "trailing-status",
+            "earnings-check",
         ]})
         sys.exit(1)
 
@@ -554,6 +562,8 @@ def main():
         cmd_scalp_status()
     elif command == "trailing-status":
         cmd_trailing_status()
+    elif command == "earnings-check":
+        cmd_earnings_check()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
