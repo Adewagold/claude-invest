@@ -1,190 +1,200 @@
-mode: paper
 capital: 5000
-max_positions: 8
-max_per_ticker: 0.10
-position_size_pct: 0.02
-daily_loss_limit: -150
-pdt_tracking: true
-
-exit_strategy:
-  stop_loss_pct: 0.05
-  trailing_stop_pct: 0.05
-  trailing_stop_activate_pct: 0.0  # activate after any profit (0 = immediate)
-  partial_profit_levels:
-    - profit_pct: 0.10
-      sell_pct: 0.25
-    - profit_pct: 0.20
-      sell_pct: 0.25
-  signal_exit: true
-
-polling:
-  market_open_interval: 5
-  market_close_interval: 5
-  midday_interval: 15
-  crypto_interval: 60
-
-discovery:
-  min_relative_volume: 2.0
-  min_news_count: 2
-  sentiment_threshold: 0.3
-
-trading_style: mixed
-
 capital_split:
-  trading: 0.50
-  core: 0.50
-
-portfolio:
-  allocation:
-    safe: 0.30
-    neutral: 0.40
-    risk: 0.30
-  drift_threshold: 0.10
-  sectors:
-    overrides:
-      TRUMP/USD: "meme"
-      DOGE/USD: "meme"
-      SHIB/USD: "meme"
-      BONK/USD: "meme"
-      WIF/USD: "meme"
-      PEPE/USD: "meme"
-  time_horizon:
-    short_term_max_days: 30
-    long_term_min_days: 30
-
-risk_tiers:
-  safe:
-    - bonds
-    - reits
-    - dividend
-    - utilities
-    - consumer_staples
-  neutral:
-    - large_cap
-    - technology
-    - healthcare
-    - financial
-    - industrial
-    - energy
-  risk:
-    - small_cap
-    - biotech
-    - meme
-    - crypto
-    - penny
-    - speculative
-
-strategies:
-  active:
-    - mean_reversion
-    - trend_pullback
-    - momentum
-
-  mean_reversion:
-    name: "RSI(2) Mean Reversion"
-    description: "Buy oversold bounces, sell overbought. 73% win rate backtested."
-    enabled: true
-    capital_pct: 0.25
-    params:
-      rsi_period: 2
-      rsi_buy_threshold: 25
-      rsi_sell_threshold: 65
-      max_hold_bars: 5
-      require_above_ma200: true
-      stop_loss_pct: 0.01
-      take_profit_pct: 0.02
-    best_for: "ranging/choppy markets, large-cap stocks"
-
-  trend_pullback:
-    name: "MACD 5/35/5 Trend"
-    description: "Buy dips in uptrends with custom MACD. 65-73% in trends."
-    enabled: true
-    capital_pct: 0.25
-    params:
-      macd_fast: 5
-      macd_slow: 35
-      macd_signal: 5
-      rsi_period: 14
-      rsi_buy_threshold: 40
-      rsi_sell_threshold: 60
-      require_above_ma200: true
-      stop_loss_pct: 0.02
-      take_profit_pct: 0.04
-    best_for: "trending markets"
-
-  momentum:
-    name: "Momentum Breakout"
-    description: "Current strategy - MACD crossover + RSI sweet spot."
-    enabled: true
-    capital_pct: 0.25
-    params:
-      rsi_period: 14
-      rsi_entry_min: 30
-      rsi_entry_max: 65
-      macd_crossover: true
-      stop_loss_pct: 0.05
-      take_profit_pct: 0.10
-    best_for: "breakouts, discovery scanner"
-
+  core: 0.5
+  trading: 0.5
 core_holdings:
-  enabled: true
-  max_positions: 15
   buy_list:
-    - {symbol: NVDA, sector: tech, weight: 0.10}
-    - {symbol: MSFT, sector: tech, weight: 0.10}
-    - {symbol: GOOGL, sector: tech, weight: 0.10}
-    - {symbol: AAPL, sector: tech, weight: 0.10}
-    - {symbol: AMZN, sector: tech, weight: 0.10}
-    - {symbol: META, sector: tech, weight: 0.10}
-    - {symbol: AMD, sector: semiconductors, weight: 0.10}
-    - {symbol: JPM, sector: finance, weight: 0.10}
-    - {symbol: JNJ, sector: healthcare, weight: 0.10}
-    - {symbol: SPY, sector: etf, weight: 0.10}
+  - sector: tech
+    symbol: NVDA
+    weight: 0.077
+  - sector: tech
+    symbol: MSFT
+    weight: 0.077
+  - sector: tech
+    symbol: GOOGL
+    weight: 0.077
+  - sector: tech
+    symbol: AAPL
+    weight: 0.077
+  - sector: tech
+    symbol: AMZN
+    weight: 0.077
+  - sector: tech
+    symbol: META
+    weight: 0.077
+  - sector: semiconductors
+    symbol: AMD
+    weight: 0.077
+  - sector: finance
+    symbol: JPM
+    weight: 0.077
+  - sector: healthcare
+    symbol: JNJ
+    weight: 0.077
+  - sector: etf
+    symbol: SPY
+    weight: 0.077
+  - sector: crypto
+    symbol: BTC/USD
+    weight: 0.077
+  - sector: crypto
+    symbol: ETH/USD
+    weight: 0.077
+  - sector: crypto
+    symbol: SOL/USD
+    weight: 0.076
+  enabled: true
   entry:
-    mode: dca_on_dip
-    sma_period: 50
     dca_interval_days: 7
     max_per_buy: 0.02
+    mode: dca_on_dip
+    sma_period: 50
   exit:
-    sell_on_signals: false
+    max_position_pct: 0.2
     sell_on_removal: true
-    sentiment_exit_threshold: -0.3
+    sell_on_signals: false
     sentiment_exit_days: 5
-    max_position_pct: 0.20
+    sentiment_exit_threshold: -0.3
+  max_positions: 15
   rebalance:
-    interval_days: 90
     drift_threshold: 0.05
-
+    interval_days: 90
+daily_loss_limit: -150
+discovery:
+  min_news_count: 2
+  min_relative_volume: 2
+  sentiment_threshold: 0.3
+exit_strategy:
+  signal_exit: true
+  stop_loss_pct: 0.05
+  trailing_stop_pct: 0.03
+max_per_ticker: 0.1
+max_positions: 8
+mode: paper
+pdt_tracking: true
+polling:
+  crypto_interval: 60
+  market_close_interval: 5
+  market_open_interval: 5
+  midday_interval: 15
+portfolio:
+  allocation:
+    neutral: 0.4
+    risk: 0.3
+    safe: 0.3
+  drift_threshold: 0.1
+  sectors:
+    overrides:
+      BONK/USD: meme
+      DOGE/USD: meme
+      PEPE/USD: meme
+      SHIB/USD: meme
+      TRUMP/USD: meme
+      WIF/USD: meme
+  time_horizon:
+    long_term_min_days: 30
+    short_term_max_days: 30
+position_size_pct: 0.02
+risk_tiers:
+  neutral:
+  - large_cap
+  - technology
+  - healthcare
+  - financial
+  - industrial
+  - energy
+  risk:
+  - small_cap
+  - biotech
+  - meme
+  - crypto
+  - penny
+  - speculative
+  safe:
+  - bonds
+  - reits
+  - dividend
+  - utilities
+  - consumer_staples
+strategies:
+  active:
+  - mean_reversion
+  - trend_pullback
+  - momentum
+  mean_reversion:
+    best_for: ranging/choppy markets, large-cap stocks
+    capital_pct: 0.25
+    description: Buy oversold bounces, sell overbought. 73% win rate backtested.
+    enabled: true
+    name: RSI(2) Mean Reversion
+    params:
+      max_hold_bars: 5
+      require_above_ma200: true
+      rsi_buy_threshold: 25
+      rsi_period: 2
+      rsi_sell_threshold: 65
+      stop_loss_pct: 0.01
+      take_profit_pct: 0.02
+  momentum:
+    best_for: breakouts, discovery scanner
+    capital_pct: 0.25
+    description: Current strategy - MACD crossover + RSI sweet spot.
+    enabled: true
+    name: Momentum Breakout
+    params:
+      macd_crossover: true
+      rsi_entry_max: 65
+      rsi_entry_min: 30
+      rsi_period: 14
+      stop_loss_pct: 0.05
+      take_profit_pct: 0.1
+  trend_pullback:
+    best_for: trending markets
+    capital_pct: 0.25
+    description: Buy dips in uptrends with custom MACD. 65-73% in trends.
+    enabled: true
+    name: MACD 5/35/5 Trend
+    params:
+      macd_fast: 5
+      macd_signal: 5
+      macd_slow: 35
+      require_above_ma200: true
+      rsi_buy_threshold: 40
+      rsi_period: 14
+      rsi_sell_threshold: 60
+      stop_loss_pct: 0.02
+      take_profit_pct: 0.04
+trading_style: mixed
 volatility_scalper:
-  name: "Volatility Scalper"
-  enabled: true
   capital_pct: 0.25
-  modes:
-    dip_buying: true
-    rally_shorting: false
-    news_reaction: true
-  watchlist:
-    - OKLO
-    - RIVN
-    - PLTR
-    - IONQ
-    - MARA
   discovery:
     enabled: true
-    min_atr_pct: 0.04
     lookback_days: 20
+    min_atr_pct: 0.04
+  enabled: true
+  modes:
+    dip_buying: true
+    news_reaction: true
+    rally_shorting: false
+  name: Volatility Scalper
   params:
-    bar_timeframe: "15Min"
+    bar_timeframe: 15Min
     dip_threshold: -0.05
-    rally_threshold: 0.05
-    rsi_period: 14
-    rsi_oversold: 30
-    rsi_overbought: 75
+    force_exit_time: '15:55'
+    max_concurrent: 2
+    max_hold_minutes: 120
+    news_min_articles: 3
     news_sentiment_buy: -0.3
     news_sentiment_short: 0.4
-    news_min_articles: 3
-    take_profit_pct: 0.03
+    rally_threshold: 0.05
+    rsi_overbought: 75
+    rsi_oversold: 30
+    rsi_period: 14
     stop_loss_pct: 0.03
-    max_hold_minutes: 120
-    force_exit_time: "15:55"
-    max_concurrent: 2
+    take_profit_pct: 0.03
+  watchlist:
+  - OKLO
+  - RIVN
+  - PLTR
+  - IONQ
+  - MARA
