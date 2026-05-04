@@ -344,6 +344,21 @@ class Database:
         )
         return [dict(row) for row in cursor.fetchall()]
 
+    def get_open_positions_by_strategy(self, strategy_id: str) -> list[dict]:
+        """Get open positions tagged with a specific strategy_id from trades table."""
+        conn = self._get_conn()
+        cursor = conn.execute(
+            """SELECT DISTINCT t.symbol, t.qty, t.price, t.timestamp, t.position_id
+               FROM trades t
+               WHERE t.trade_type = ? AND t.side = 'buy'
+               AND t.position_id NOT IN (
+                   SELECT COALESCE(position_id, '') FROM trades WHERE side = 'sell' AND position_id IS NOT NULL
+               )
+               ORDER BY t.timestamp DESC""",
+            (strategy_id,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
     def close(self):
         if self._conn:
             self._conn.close()
