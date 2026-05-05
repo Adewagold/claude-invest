@@ -474,6 +474,41 @@ def cmd_dividends():
     _output(result)
 
 
+def cmd_check_graduation(symbol: str):
+    from pathlib import Path
+    from claude_invest.modules.graduation import check_graduation, execute_graduation
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    portfolio = get_portfolio()
+
+    result = check_graduation(symbol, config, db, portfolio)
+    if result["decision"] == "graduate":
+        config_path = str(Path(__file__).parent / "config" / "settings.yaml")
+        grad_result = execute_graduation(symbol, config, db, portfolio, config_path)
+        result["graduation"] = grad_result
+
+    _output(result)
+    db.close()
+
+
+def cmd_core_health():
+    from claude_invest.modules.core_guardian import check_core_health, update_peaks, check_probation_promotions
+    config = load_config()
+    db = Database(DB_PATH)
+    db.initialize()
+    portfolio = get_portfolio()
+
+    core_symbols = {item["symbol"] for item in config.get("core_holdings", {}).get("buy_list", [])}
+    update_peaks(db, portfolio, core_symbols)
+    health = check_core_health(config, db, portfolio)
+    promotions = check_probation_promotions(config, db, portfolio)
+    health["promotions"] = promotions
+
+    _output(health)
+    db.close()
+
+
 def cmd_earnings_check():
     from claude_invest.modules.earnings import check_portfolio_earnings
     portfolio = get_portfolio()
@@ -578,6 +613,10 @@ def main():
         cmd_earnings_check()
     elif command == "dividends":
         cmd_dividends()
+    elif command == "check-graduation" and len(sys.argv) >= 3:
+        cmd_check_graduation(sys.argv[2])
+    elif command == "core-health":
+        cmd_core_health()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)

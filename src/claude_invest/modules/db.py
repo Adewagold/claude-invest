@@ -121,6 +121,28 @@ class Database:
                 old_weight REAL,
                 new_weight REAL
             );
+
+            CREATE TABLE IF NOT EXISTS graduations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+                symbol TEXT NOT NULL,
+                entry_price REAL NOT NULL,
+                graduation_price REAL NOT NULL,
+                hold_days INTEGER NOT NULL,
+                gain_pct REAL NOT NULL,
+                sentiment_score REAL,
+                status TEXT DEFAULT 'probation',
+                promoted_at TEXT,
+                demoted_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS core_peaks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL UNIQUE,
+                peak_price REAL NOT NULL,
+                peak_date TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
         """)
         for table in ("decisions", "trades"):
             cursor = conn.execute(f"PRAGMA table_info({table})")
@@ -342,6 +364,75 @@ class Database:
         cursor = conn.execute(
             "SELECT * FROM rebalance_log ORDER BY timestamp DESC LIMIT ?", (limit,)
         )
+        return [dict(row) for row in cursor.fetchall()]
+
+    def insert_graduation(self, entry: dict):
+        conn = self._get_conn()
+        conn.execute(
+            "INSERT INTO graduations (symbol, entry_price, graduation_price, hold_days, gain_pct, sentiment_score) VALUES (?, ?, ?, ?, ?, ?)",
+            (entry["symbol"], entry["entry_price"], entry["graduation_price"],
+             entry["hold_days"], entry["gain_pct"], entry.get("sentiment_score")),
+        )
+        conn.commit()
+
+    def get_graduations(self, status: str | None = None) -> list[dict]:
+        conn = self._get_conn()
+        if status:
+            cursor = conn.execute(
+                "SELECT * FROM graduations WHERE status = ? ORDER BY timestamp DESC", (status,)
+            )
+        else:
+            cursor = conn.execute("SELECT * FROM graduations ORDER BY timestamp DESC")
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_graduation_by_symbol(self, symbol: str) -> dict | None:
+        conn = self._get_conn()
+        cursor = conn.execute(
+            "SELECT * FROM graduations WHERE symbol = ? AND status IN ('probation', 'promoted') ORDER BY timestamp DESC LIMIT 1",
+            (symbol,),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def update_graduation_status(self, graduation_id: int, status: str):
+        conn = self._get_conn()
+        if status == "promoted":
+            conn.execute(
+                "UPDATE graduations SET status=?, promoted_at=datetime('now') WHERE id=?",
+                (status, graduation_id),
+            )
+        elif status == "demoted":
+            conn.execute(
+                "UPDATE graduations SET status=?, demoted_at=datetime('now') WHERE id=?",
+                (status, graduation_id),
+            )
+        else:
+            conn.execute("UPDATE graduations SET status=? WHERE id=?", (status, graduation_id))
+        conn.commit()
+
+    def upsert_core_peak(self, symbol: str, price: float, date: str):
+        conn = self._get_conn()
+        conn.execute(
+            """INSERT INTO core_peaks (symbol, peak_price, peak_date, updated_at)
+               VALUES (?, ?, ?, datetime('now'))
+               ON CONFLICT(symbol) DO UPDATE SET
+                 peak_price = excluded.peak_price,
+                 peak_date = excluded.peak_date,
+                 updated_at = datetime('now')
+               WHERE excluded.peak_price > core_peaks.peak_price""",
+            (symbol, price, date),
+        )
+        conn.commit()
+
+    def get_core_peak(self, symbol: str) -> dict | None:
+        conn = self._get_conn()
+        cursor = conn.execute("SELECT * FROM core_peaks WHERE symbol = ?", (symbol,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def get_all_core_peaks(self) -> list[dict]:
+        conn = self._get_conn()
+        cursor = conn.execute("SELECT * FROM core_peaks ORDER BY symbol")
         return [dict(row) for row in cursor.fetchall()]
 
     def get_open_positions_by_strategy(self, strategy_id: str) -> list[dict]:

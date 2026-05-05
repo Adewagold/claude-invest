@@ -11,7 +11,7 @@ def db(tmp_db_path):
 
 def test_initialize_creates_tables(db):
     tables = db.list_tables()
-    expected = {"trades", "positions", "signals", "decisions", "portfolio_snapshots", "discovery_log", "pdt_tracker", "change_log", "core_buys", "rebalance_log"}
+    expected = {"trades", "positions", "signals", "decisions", "portfolio_snapshots", "discovery_log", "pdt_tracker", "change_log", "core_buys", "rebalance_log", "graduations", "core_peaks"}
     assert expected == set(tables)
 
 
@@ -289,4 +289,84 @@ def test_insert_and_get_rebalance_log(tmp_db_path):
     assert len(logs) == 1
     assert logs[0]["symbol"] == "NVDA"
     assert logs[0]["reason"] == "overweight"
+    db.close()
+
+
+def test_insert_and_get_graduation(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    entry = {
+        "symbol": "SNDK",
+        "entry_price": 913.86,
+        "graduation_price": 1332.0,
+        "hold_days": 16,
+        "gain_pct": 0.457,
+        "sentiment_score": 0.25,
+    }
+    db.insert_graduation(entry)
+    results = db.get_graduations()
+    assert len(results) == 1
+    assert results[0]["symbol"] == "SNDK"
+    assert results[0]["status"] == "probation"
+    db.close()
+
+
+def test_update_graduation_status(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.insert_graduation({
+        "symbol": "MU",
+        "entry_price": 565.0,
+        "graduation_price": 645.0,
+        "hold_days": 10,
+        "gain_pct": 0.14,
+        "sentiment_score": 0.20,
+    })
+    grads = db.get_graduations()
+    db.update_graduation_status(grads[0]["id"], "promoted")
+    updated = db.get_graduations()
+    assert updated[0]["status"] == "promoted"
+    assert updated[0]["promoted_at"] is not None
+    db.close()
+
+
+def test_upsert_and_get_core_peak(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.upsert_core_peak("NVDA", 200.0, "2026-05-01")
+    peak = db.get_core_peak("NVDA")
+    assert peak["peak_price"] == 200.0
+
+    # Update to higher price
+    db.upsert_core_peak("NVDA", 210.0, "2026-05-05")
+    peak = db.get_core_peak("NVDA")
+    assert peak["peak_price"] == 210.0
+    db.close()
+
+
+def test_get_all_core_peaks(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.upsert_core_peak("NVDA", 200.0, "2026-05-01")
+    db.upsert_core_peak("AAPL", 285.0, "2026-05-01")
+    peaks = db.get_all_core_peaks()
+    assert len(peaks) == 2
+    db.close()
+
+
+def test_get_graduation_by_symbol(tmp_db_path):
+    db = Database(tmp_db_path)
+    db.initialize()
+    db.insert_graduation({
+        "symbol": "SNDK",
+        "entry_price": 913.86,
+        "graduation_price": 1332.0,
+        "hold_days": 16,
+        "gain_pct": 0.457,
+        "sentiment_score": 0.25,
+    })
+    result = db.get_graduation_by_symbol("SNDK")
+    assert result is not None
+    assert result["symbol"] == "SNDK"
+    assert db.get_graduation_by_symbol("FAKE") is None
     db.close()

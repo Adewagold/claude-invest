@@ -279,6 +279,42 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
         scalp_positions = [p for p in portfolio_data.get("positions", []) if p.get("symbol") in watchlist]
         return {"scalp_positions": scalp_positions}
 
+    @app.get("/api/graduations")
+    def api_graduations():
+        db = get_db()
+        graduations = db.get_graduations()
+        db.close()
+        return {"graduations": graduations}
+
+    @app.get("/api/core/health")
+    def api_core_health():
+        from claude_invest.modules.core_guardian import check_core_health, update_peaks
+        config = load_config()
+        db = get_db()
+        portfolio_data = get_portfolio()
+
+        core_symbols = {item["symbol"] for item in config.get("core_holdings", {}).get("buy_list", [])}
+        update_peaks(db, portfolio_data, core_symbols)
+        health = check_core_health(config, db, portfolio_data)
+
+        peaks = db.get_all_core_peaks()
+        positions_by_symbol = {p["symbol"]: p for p in portfolio_data.get("positions", [])}
+        drawdowns = []
+        for peak in peaks:
+            pos = positions_by_symbol.get(peak["symbol"])
+            if pos:
+                dd = (pos["current_price"] - peak["peak_price"]) / peak["peak_price"]
+                drawdowns.append({
+                    "symbol": peak["symbol"],
+                    "peak_price": peak["peak_price"],
+                    "peak_date": peak["peak_date"],
+                    "current_price": pos["current_price"],
+                    "drawdown": dd,
+                })
+        health["drawdowns"] = drawdowns
+        db.close()
+        return health
+
     return app
 
 

@@ -226,12 +226,22 @@ def run_core_cycle(config: dict, db: Database) -> dict:
 
     exits = check_core_exits(config, db, portfolio)
 
+    # Run core guardian health checks
+    from claude_invest.modules.core_guardian import check_core_health, update_peaks, check_probation_promotions
+
+    core_symbols = {item["symbol"] for item in buy_list}
+    update_peaks(db, portfolio, core_symbols)
+    health = check_core_health(config, db, portfolio)
+    promotions = check_probation_promotions(config, db, portfolio)
+
     return {
         "buys_executed": buys_executed,
         "buys_skipped": buys_skipped,
         "exits": exits,
         "core_capital": core_capital,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "guardian": health,
+        "promotions": promotions,
     }
 
 

@@ -6,43 +6,46 @@ core_holdings:
   buy_list:
   - sector: tech
     symbol: NVDA
-    weight: 0.077
+    weight: 0.071
   - sector: tech
     symbol: MSFT
-    weight: 0.077
+    weight: 0.071
   - sector: tech
     symbol: GOOGL
-    weight: 0.077
+    weight: 0.071
   - sector: tech
     symbol: AAPL
-    weight: 0.077
+    weight: 0.071
   - sector: tech
     symbol: AMZN
-    weight: 0.077
+    weight: 0.071
   - sector: tech
     symbol: META
-    weight: 0.077
+    weight: 0.071
   - sector: semiconductors
     symbol: AMD
-    weight: 0.077
+    weight: 0.071
+  - sector: semiconductors
+    symbol: SNDK
+    weight: 0.071
   - sector: finance
     symbol: JPM
-    weight: 0.077
+    weight: 0.071
   - sector: healthcare
     symbol: JNJ
-    weight: 0.077
+    weight: 0.071
   - sector: etf
     symbol: SPY
-    weight: 0.077
+    weight: 0.071
   - sector: crypto
     symbol: BTC/USD
-    weight: 0.077
+    weight: 0.071
   - sector: crypto
     symbol: ETH/USD
-    weight: 0.077
+    weight: 0.071
   - sector: crypto
     symbol: SOL/USD
-    weight: 0.076
+    weight: 0.075
   enabled: true
   entry:
     dca_interval_days: 7
@@ -198,3 +201,18 @@ volatility_scalper:
   - PLTR
   - IONQ
   - MARA
+graduation:
+  min_hold_days: 5
+  min_gain_pct: 0.10
+  min_sentiment: 0.15
+  min_articles: 3
+  probation_days: 30
+  probation_weight: 0.035
+core_guardian:
+  warning_drawdown: -0.15
+  reduce_drawdown: -0.25
+  exit_drawdown: -0.35
+  warning_days: 5
+  reduce_days: 10
+  crash_override_threshold: -0.10
+  probation_tighter_factor: 0.67
