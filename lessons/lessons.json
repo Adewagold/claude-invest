@@ -11,7 +11,19 @@
       "tickers": [
         "CMND"
       ]
+    },
+    {
+      "signal_combo": "macd_above_signal + rsi_50_70 + sent_positive + trend_bullish",
+      "wins": 0,
+      "losses": 1,
+      "total": 1,
+      "win_rate": 0.0,
+      "avg_pnl": -0.7,
+      "confidence": "low",
+      "tickers": [
+        "LOBO"
+      ]
     }
   ],
-  "last_updated": "2026-04-21"
+  "last_updated": "2026-05-06"
 }
