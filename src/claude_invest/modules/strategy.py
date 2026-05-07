@@ -46,6 +46,29 @@ def update_lessons(lessons_dir: str, patterns: list[dict], date: str):
             f.write(f"- [{status}] {p['signal_combo']}: {p['wins']}W/{p['losses']}L (avg P&L: {p['avg_pnl']:.2f})\n")
 
 
+def _extract_manual_rules(lessons_dir: str) -> list[str]:
+    """Extract manually-added RULES section from existing strategy-brief.md."""
+    brief_path = os.path.join(lessons_dir, "strategy-brief.md")
+    if not os.path.exists(brief_path):
+        return []
+    with open(brief_path, "r") as f:
+        content = f.read()
+    # Find the "## RULES (always follow)" section
+    lines = content.split("\n")
+    rules = []
+    in_rules = False
+    for line in lines:
+        if line.strip().startswith("## RULES (always follow)"):
+            in_rules = True
+            rules.append(line)
+            continue
+        if in_rules:
+            if line.strip().startswith("## "):
+                break  # Hit next section
+            rules.append(line)
+    return rules
+
+
 def build_strategy_brief(lessons_dir: str, allocation: dict, *,
                          dimension_insights: dict | None = None,
                          active_changes: list[dict] | None = None,
@@ -56,6 +79,13 @@ def build_strategy_brief(lessons_dir: str, allocation: dict, *,
     lines = ["# Strategy Brief", ""]
     lines.append(f"*Updated: {lessons.get('last_updated', 'never')}*")
     lines.append("")
+
+    # Preserve manually-added RULES section
+    manual_rules = _extract_manual_rules(lessons_dir)
+    if manual_rules:
+        lines.extend(manual_rules)
+        if not lines[-1] == "":
+            lines.append("")
 
     rules_always = [p for p in patterns if p.get("confidence") == "high" and p.get("win_rate", 0) >= 0.75 and p.get("total", 0) >= 3]
     rules_never = [p for p in patterns if p.get("confidence") == "high" and p.get("win_rate", 1) <= 0.25 and p.get("total", 0) >= 3]

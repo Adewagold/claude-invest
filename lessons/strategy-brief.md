@@ -13,7 +13,7 @@
 
 ## ALLOCATION ALERTS
 - SAFE: 0% actual vs 30% target (UNDER by 30%)
-- NEUTRAL: 91% actual vs 40% target (OVER by 51%)
-- RISK: 9% actual vs 30% target (UNDER by 21%)
+- NEUTRAL: 92% actual vs 40% target (OVER by 52%)
+- RISK: 8% actual vs 30% target (UNDER by 22%)
 
 ## OVERALL: 1W/1L (50% win rate)
