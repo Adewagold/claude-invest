@@ -1,39 +1,39 @@
 {
   "tickers": [
     {
-      "symbol": "NVDA",
-      "note": "AI leader, wait for dip",
-      "added": "2026-04-21"
-    },
-    {
-      "symbol": "AAPL",
-      "note": "Core tech holding",
-      "added": "2026-04-21"
-    },
-    {
       "symbol": "TSLA",
-      "note": "Volatile but opportunity",
-      "added": "2026-04-21"
-    },
-    {
-      "symbol": "DOGE/USD",
-      "note": "Meme crypto allocation",
-      "added": "2026-04-21"
-    },
-    {
-      "symbol": "INTC",
-      "note": "Chip value play, MACD nearly crossing",
-      "added": "2026-04-21"
-    },
-    {
-      "symbol": "AMD",
-      "note": "Chip leader, wait for RSI pullback below 60",
+      "note": "Volatile, RSI 74 overbought — wait for pullback to RSI <50",
       "added": "2026-04-21"
     },
     {
       "symbol": "MU",
-      "note": "",
+      "note": "Graduated from trading. Re-entry if RSI drops below 40 with bullish MACD",
       "added": "2026-05-01"
+    },
+    {
+      "symbol": "INTC",
+      "note": "Chip value play, RSI 48 neutral. Wait for MACD golden cross",
+      "added": "2026-04-21"
+    },
+    {
+      "symbol": "DOGE/USD",
+      "note": "Meme crypto, fills risk allocation. Wait for RSI <30 dip buy",
+      "added": "2026-04-21"
+    },
+    {
+      "symbol": "MSTR",
+      "note": "Bitcoin proxy, high beta. Mean reversion candidate on dips",
+      "added": "2026-05-07"
+    },
+    {
+      "symbol": "SMCI",
+      "note": "AI infrastructure, volatile. Watch for momentum entry",
+      "added": "2026-05-07"
+    },
+    {
+      "symbol": "AVGO",
+      "note": "AI chip/networking leader. Watch for pullback entry",
+      "added": "2026-05-07"
     }
   ]
 }

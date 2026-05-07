@@ -6,45 +6,54 @@ core_holdings:
   buy_list:
   - sector: tech
     symbol: NVDA
-    weight: 0.071
+    weight: 0.055
   - sector: tech
     symbol: MSFT
-    weight: 0.071
+    weight: 0.055
   - sector: tech
     symbol: GOOGL
-    weight: 0.071
+    weight: 0.055
   - sector: tech
     symbol: AAPL
-    weight: 0.071
+    weight: 0.055
   - sector: tech
     symbol: AMZN
-    weight: 0.071
+    weight: 0.055
   - sector: tech
     symbol: META
-    weight: 0.071
+    weight: 0.055
   - sector: semiconductors
     symbol: AMD
-    weight: 0.071
+    weight: 0.055
   - sector: semiconductors
     symbol: SNDK
-    weight: 0.071
+    weight: 0.055
   - sector: finance
     symbol: JPM
-    weight: 0.071
+    weight: 0.055
   - sector: healthcare
     symbol: JNJ
-    weight: 0.071
+    weight: 0.055
   - sector: etf
     symbol: SPY
-    weight: 0.071
+    weight: 0.055
   - sector: crypto
     symbol: BTC/USD
-    weight: 0.071
+    weight: 0.055
   - sector: crypto
     symbol: ETH/USD
-    weight: 0.071
+    weight: 0.055
   - sector: crypto
     symbol: SOL/USD
+    weight: 0.055
+  - sector: bonds
+    symbol: BND
+    weight: 0.08
+  - sector: utilities
+    symbol: NEE
+    weight: 0.08
+  - sector: dividend
+    symbol: VZ
     weight: 0.075
   enabled: true
   entry:
@@ -65,8 +74,8 @@ core_holdings:
 daily_loss_limit: -150
 discovery:
   min_news_count: 2
-  min_relative_volume: 2
-  sentiment_threshold: 0.3
+  min_relative_volume: 1.5
+  sentiment_threshold: 0.2
 exit_strategy:
   signal_exit: true
   stop_loss_pct: 0.05
@@ -173,7 +182,7 @@ volatility_scalper:
   discovery:
     enabled: true
     lookback_days: 20
-    min_atr_pct: 0.04
+    min_atr_pct: 0.03
   enabled: true
   modes:
     dip_buying: true
@@ -182,12 +191,12 @@ volatility_scalper:
   name: Volatility Scalper
   params:
     bar_timeframe: 15Min
-    dip_threshold: -0.05
+    dip_threshold: -0.03
     force_exit_time: '15:55'
     max_concurrent: 2
     max_hold_minutes: 120
-    news_min_articles: 3
-    news_sentiment_buy: -0.3
+    news_min_articles: 2
+    news_sentiment_buy: -0.2
     news_sentiment_short: 0.4
     rally_threshold: 0.05
     rsi_overbought: 75
