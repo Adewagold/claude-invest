@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from ruamel.yaml import YAML
 
 from claude_invest.modules.db import Database
+from claude_invest.modules.notify import send_alert
 from claude_invest.modules.sentiment import analyze_sentiment
 from claude_invest.modules.technicals import analyze_technicals
 
@@ -165,6 +166,11 @@ def execute_graduation(symbol: str, config: dict, db: Database, portfolio: dict,
     logger.info(
         "GRADUATED %s: held %d days, +%.1f%%, sentiment %.2f. Added to core at %.1f%% weight.",
         symbol, hold_days, gain_pct * 100, sentiment_score or 0, probation_weight * 100,
+    )
+    send_alert(
+        f"GRADUATED {symbol}: held {hold_days}d, +{gain_pct*100:.1f}%, "
+        f"sentiment {sentiment_score or 0:.2f}. Added to core at {probation_weight*100:.1f}% weight.",
+        "graduation",
     )
 
     return {

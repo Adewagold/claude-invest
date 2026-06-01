@@ -5,6 +5,8 @@ from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from dotenv import load_dotenv
 
+from claude_invest.modules.notify import send_alert
+
 load_dotenv()
 
 
@@ -32,7 +34,7 @@ def execute_order(symbol: str, side: str, qty: float) -> dict:
 
         order = client.submit_order(request)
 
-        return {
+        result = {
             "order_id": str(order.id),
             "symbol": order.symbol,
             "side": side,
@@ -41,6 +43,16 @@ def execute_order(symbol: str, side: str, qty: float) -> dict:
             "status": str(order.status),
             "submitted_at": str(order.submitted_at),
         }
+
+        if result.get("status") != "error":
+            category = "trade" if side == "buy" else "sell"
+            filled = result.get("filled_price") or "market"
+            send_alert(
+                f"{side.upper()} {symbol} {qty} @ ${filled} | Status: {result.get('status')}",
+                category,
+            )
+
+        return result
 
     except Exception as e:
         return {

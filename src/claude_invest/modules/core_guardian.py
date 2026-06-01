@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 from claude_invest.modules.db import Database
 from claude_invest.modules.executor import execute_order
+from claude_invest.modules.notify import send_alert
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,10 @@ def check_core_health(config: dict, db: Database, portfolio: dict) -> dict:
             crash_override = True
             logger.info("CRASH OVERRIDE: SPY drawdown %.1f%% > %.1f%% threshold. Suspending exits.",
                        spy_drawdown * 100, crash_threshold * 100)
+            send_alert(
+                f"CRASH OVERRIDE: SPY drawdown {spy_drawdown*100:.1f}%. All exits suspended.",
+                "guardian",
+            )
 
     if crash_override:
         return {"warnings": [], "trims": [], "exits": [], "crash_override": True}
@@ -108,6 +113,10 @@ def check_core_health(config: dict, db: Database, portfolio: dict) -> dict:
                 "order": order,
                 "probation": is_probation,
             })
+            send_alert(
+                f"CORE EXIT: {symbol} drawdown {drawdown*100:.1f}%. Full sell.",
+                "guardian",
+            )
             logger.info("CORE EXIT: %s drawdown %.1f%% (threshold %.1f%%). Full sell.",
                        symbol, drawdown * 100, effective_exit * 100)
 
@@ -128,6 +137,10 @@ def check_core_health(config: dict, db: Database, portfolio: dict) -> dict:
                 "order": order,
                 "probation": is_probation,
             })
+            send_alert(
+                f"CORE REDUCE: {symbol} drawdown {drawdown*100:.1f}%. Selling 50%.",
+                "guardian",
+            )
             logger.info("CORE REDUCE: %s drawdown %.1f%% for %d days. Selling 50%%.",
                        symbol, drawdown * 100, days_since)
 
@@ -144,6 +157,10 @@ def check_core_health(config: dict, db: Database, portfolio: dict) -> dict:
                 "days_since_peak": days_since,
                 "probation": is_probation,
             })
+            send_alert(
+                f"CORE WARNING: {symbol} drawdown {drawdown*100:.1f}% for {days_since} days",
+                "guardian",
+            )
             logger.info("CORE WARNING: %s drawdown %.1f%% for %d days.",
                        symbol, drawdown * 100, days_since)
 
