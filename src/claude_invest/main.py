@@ -492,6 +492,11 @@ def cmd_check_graduation(symbol: str):
     db.close()
 
 
+def cmd_telegram_bot():
+    from claude_invest.modules.telegram_bot import run_bot
+    run_bot()
+
+
 def cmd_core_health():
     from claude_invest.modules.core_guardian import check_core_health, update_peaks, check_probation_promotions
     config = load_config()
@@ -617,6 +622,8 @@ def main():
         cmd_check_graduation(sys.argv[2])
     elif command == "core-health":
         cmd_core_health()
+    elif command == "telegram-bot":
+        cmd_telegram_bot()
     else:
         _output({"error": f"Unknown command or missing args: {command}"})
         sys.exit(1)
