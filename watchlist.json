@@ -2,7 +2,7 @@
   "tickers": [
     {
       "symbol": "TSLA",
-      "note": "Volatile, RSI 74 overbought — wait for pullback to RSI <50",
+      "note": "Volatile, RSI 74 overbought \u2014 wait for pullback to RSI <50",
       "added": "2026-04-21"
     },
     {
@@ -23,16 +23,6 @@
     {
       "symbol": "MSTR",
       "note": "Bitcoin proxy, high beta. Mean reversion candidate on dips",
-      "added": "2026-05-07"
-    },
-    {
-      "symbol": "SMCI",
-      "note": "AI infrastructure, volatile. Watch for momentum entry",
-      "added": "2026-05-07"
-    },
-    {
-      "symbol": "AVGO",
-      "note": "AI chip/networking leader. Watch for pullback entry",
       "added": "2026-05-07"
     }
   ]

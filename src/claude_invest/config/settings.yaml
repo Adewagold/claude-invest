@@ -6,52 +6,79 @@ core_holdings:
   buy_list:
   - sector: tech
     symbol: NVDA
-    weight: 0.055
+    weight: 0.038
   - sector: tech
     symbol: MSFT
-    weight: 0.055
+    weight: 0.038
   - sector: tech
     symbol: GOOGL
-    weight: 0.055
+    weight: 0.038
   - sector: tech
     symbol: AAPL
-    weight: 0.055
+    weight: 0.038
   - sector: tech
     symbol: AMZN
-    weight: 0.055
+    weight: 0.038
   - sector: tech
     symbol: META
-    weight: 0.055
+    weight: 0.038
   - sector: semiconductors
     symbol: AMD
-    weight: 0.055
+    weight: 0.038
   - sector: semiconductors
     symbol: SNDK
-    weight: 0.055
+    weight: 0.038
+  - sector: semiconductors
+    symbol: LRCX
+    weight: 0.038
+  - sector: semiconductors
+    symbol: KLAC
+    weight: 0.038
+  - sector: semiconductors
+    symbol: AMAT
+    weight: 0.038
+  - sector: semiconductors
+    symbol: MRVL
+    weight: 0.038
+  - sector: storage
+    symbol: WDC
+    weight: 0.038
+  - sector: storage
+    symbol: STX
+    weight: 0.038
+  - sector: ai_infrastructure
+    symbol: AVGO
+    weight: 0.038
+  - sector: ai_infrastructure
+    symbol: ANET
+    weight: 0.038
+  - sector: ai_infrastructure
+    symbol: SMCI
+    weight: 0.038
   - sector: finance
     symbol: JPM
-    weight: 0.055
+    weight: 0.038
   - sector: healthcare
     symbol: JNJ
-    weight: 0.055
+    weight: 0.038
   - sector: etf
     symbol: SPY
-    weight: 0.055
+    weight: 0.038
   - sector: crypto
     symbol: BTC/USD
-    weight: 0.055
+    weight: 0.038
   - sector: crypto
     symbol: ETH/USD
-    weight: 0.055
+    weight: 0.038
   - sector: crypto
     symbol: SOL/USD
-    weight: 0.055
+    weight: 0.038
   - sector: bonds
     symbol: BND
-    weight: 0.08
+    weight: 0.05
   - sector: utilities
     symbol: NEE
-    weight: 0.08
+    weight: 0.05
   - sector: dividend
     symbol: VZ
     weight: 0.075
