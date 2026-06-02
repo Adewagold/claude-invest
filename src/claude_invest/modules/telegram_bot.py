@@ -180,7 +180,7 @@ def _cmd_watchlist(cmd: str, args: list[str]) -> str:
         lines = ["<b>Watchlist</b>"]
         for item in items:
             sym = item.get("symbol", "?")
-            note = item.get("note", "")
+            note = item.get("note", "").replace("<", "&lt;").replace(">", "&gt;")
             held = item.get("held", False)
             held_marker = " [held]" if held else ""
             entry = f"  {sym}{held_marker}"
