@@ -54,7 +54,12 @@ def _get_snapshot(ticker: str) -> dict:
 
     volume_ratio = daily_vol / prev_vol if prev_vol > 0 else 0.0
 
-    return {"volume_ratio": round(volume_ratio, 2)}
+    if isinstance(snap, dict):
+        close_price = float(daily_bar.get("close", 0)) if daily_bar else 0
+    else:
+        close_price = float(snap.daily_bar.close) if snap.daily_bar else 0
+
+    return {"volume_ratio": round(volume_ratio, 2), "price": close_price}
 
 
 def _get_crypto_snapshot(ticker: str) -> dict:
@@ -103,12 +108,15 @@ def scan_market(config: dict) -> list[dict]:
     min_vol = disc.get("min_relative_volume", DEFAULT_MIN_VOLUME)
     min_news = disc.get("min_news_count", DEFAULT_MIN_NEWS)
     min_sent = disc.get("sentiment_threshold", DEFAULT_MIN_SENTIMENT)
+    min_price = disc.get("min_price", 5.0)
 
     tickers = _get_most_active_tickers()
     results = []
 
     for ticker in tickers:
         snapshot = _get_snapshot(ticker)
+        if snapshot.get("price", 0) < min_price:
+            continue
         sentiment = analyze_sentiment(ticker)
 
         scored = score_ticker(

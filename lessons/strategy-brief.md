@@ -1,6 +1,6 @@
 # Strategy Brief
 
-*Updated: 2026-05-07*
+*Updated: 2026-06-19*
 
 ## RULES (always follow)
 - ALWAYS run watchlist check (`watchlist` command) during every full cycle, even at max positions

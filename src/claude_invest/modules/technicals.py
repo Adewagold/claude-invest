@@ -19,11 +19,22 @@ _TIMEFRAME_MAP = {
 }
 
 
+def _normalize_crypto_ticker(ticker: str) -> str:
+    """Convert BTCUSD -> BTC/USD so the crypto client is used."""
+    if "/" in ticker:
+        return ticker
+    if ticker.upper().endswith("USD") and len(ticker) > 3:
+        base = ticker[:-3]
+        return f"{base}/USD"
+    return ticker
+
+
 def _get_bars(ticker: str, days: int = 60, timeframe: str = "1Hour") -> pd.DataFrame:
     api_key = os.environ["ALPACA_API_KEY"]
     secret_key = os.environ["ALPACA_SECRET_KEY"]
     start = datetime.now(timezone.utc) - timedelta(days=days)
     tf = _TIMEFRAME_MAP.get(timeframe, TimeFrame.Hour)
+    ticker = _normalize_crypto_ticker(ticker)
 
     if "/" in ticker:
         client = CryptoHistoricalDataClient(api_key, secret_key)

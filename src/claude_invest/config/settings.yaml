@@ -101,6 +101,7 @@ core_holdings:
 daily_loss_limit: -150
 discovery:
   min_news_count: 2
+  min_price: 5.0
   min_relative_volume: 1.5
   sentiment_threshold: 0.2
 exit_strategy:

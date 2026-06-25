@@ -36,7 +36,8 @@ class RiskManager:
         if portfolio["daily_pnl"] <= self.daily_loss_limit:
             return {"approved": False, "reason": "Daily loss limit reached"}
 
-        if portfolio["position_count"] >= self.max_positions:
+        already_held = any(p["symbol"] == symbol for p in portfolio["positions"])
+        if portfolio["position_count"] >= self.max_positions and not already_held:
             return {"approved": False, "reason": "Max positions reached"}
 
         if strategy_type == "core_holdings":
